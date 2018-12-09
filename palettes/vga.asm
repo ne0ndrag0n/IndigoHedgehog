@@ -1,0 +1,4 @@
+VGAPalette:
+  dc.w	$0000,$00EE,$0E0E,$000E,$0EE0,$00E0,$0E00,$0888
+  dc.w	$0CCC,$0088,$0808,$0008,$0880,$0080,$0800,$0EEE
+VGAPaletteEnd:
