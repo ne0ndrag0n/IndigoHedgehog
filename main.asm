@@ -5,6 +5,8 @@
   include 'bootstrap/headers.asm'
   include 'bootstrap/init.asm'
 
+  jmp LoadPalette
+
 Main:
   jmp Main
 
@@ -29,6 +31,6 @@ VBlank:
   include 'palettes/vga.asm'
 
 RomEnd:
-  ORG $3FFFFF
+  ORG $003FFFFF
   dc.b %11111111
   end 0
