@@ -1,7 +1,3 @@
-  macro VDPSetRegister
-    move.w #( ( ( $80 + \1 ) << 8 ) | \2 ), (VDP_CONTROL)
-  endm
-
 LoadPalette:
   ; Set DMA to read 16 words
   VDPSetRegister 20, $00
@@ -16,4 +12,4 @@ LoadPalette:
   ; Bit CD5 in the address must be one for this to work
   move.l  #( VDP_CRAM_WRITE | $00000080 ), (VDP_CONTROL)
 
-  jmp Main
+  jmp LoadPatternMain

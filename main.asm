@@ -1,4 +1,5 @@
   ORG $00000000
+
   include 'system/interrupts.asm'
   include 'constants/system.asm'
   include 'bootstrap/vectors.asm'
@@ -6,6 +7,8 @@
   include 'bootstrap/init.asm'
 
   jmp LoadPalette
+LoadPatternMain:
+  jmp LoadPattern
 
 Main:
   jmp Main
@@ -23,12 +26,13 @@ VBlank:
   rte
 
   include 'constants/vdpinit.asm'
-  include 'vdp/clear.asm'
-  include 'patterns/demo.asm'
+
+  include 'vdp/mod.asm'
   include 'modules/mod.asm'
 
   ORG $00080000
   include 'palettes/vga.asm'
+  include 'patterns/demo.asm'
 
 RomEnd:
   ORG $003FFFFF
