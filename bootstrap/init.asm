@@ -1,5 +1,5 @@
 Start:
-	move.w	#$2700,sr		; disable interrupts
+	DisableInterrupts
 
 SecurityCheck:
   move.b  (REG_HWVERSION), d0
@@ -38,4 +38,4 @@ ClearRAMLoop:
 	move.w	#$0000, (a0)+
 	dbf			d1, ClearRAMLoop
 
-	move.w	#$2000, sr	;re-enable interrupts
+	EnableInterrupts

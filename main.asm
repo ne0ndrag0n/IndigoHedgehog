@@ -1,5 +1,5 @@
   ORG $00000000
-
+  include 'system/interrupts.asm'
   include 'constants/system.asm'
   include 'bootstrap/vectors.asm'
   include 'bootstrap/headers.asm'

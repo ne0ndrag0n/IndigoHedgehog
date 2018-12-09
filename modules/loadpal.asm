@@ -1,5 +1,5 @@
   macro VDPSetRegister
-    move.w ( ( ( $80 + \1 ) << 8 ) | \2 ), (VDP_CONTROL)
+    move.w #( ( ( $80 + \1 ) << 8 ) | \2 ), (VDP_CONTROL)
   endm
 
 LoadPalette:
@@ -13,6 +13,7 @@ LoadPalette:
   VDPSetRegister 21, ( VGAPalette / 2 ) & $000000FF
 
   ; Initiate DMA from above location to CRAM by performing a CRAM write
+  ; Bit CD5 in the address must be one for this to work
   move.l  #( VDP_CRAM_WRITE | $00000080 ), (VDP_CONTROL)
 
   jmp Main
