@@ -1,3 +1,5 @@
+  ORG $00000000
+
   include 'constants/system.asm'
   include 'bootstrap/vectors.asm'
   include 'bootstrap/headers.asm'
@@ -21,8 +23,10 @@ VBlank:
   include 'constants/vdpinit.asm'
   include 'vdp/clear.asm'
   include 'patterns/demo.asm'
-  include 'palettes/vga.asm'
   include 'modules/mod.asm'
+
+  ORG $00080000
+  include 'palettes/vga.asm'
 
 RomEnd:
   ORG $3FFFFF
