@@ -33,6 +33,7 @@ VBlank:
   ORG $00080000
   include 'palettes/vga.asm'
   include 'patterns/demo.asm'
+  include 'patterns/font.asm'
 
 RomEnd:
   ORG $003FFFFF
