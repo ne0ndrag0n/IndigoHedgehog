@@ -6,9 +6,9 @@
   include 'bootstrap/headers.asm'
   include 'bootstrap/init.asm'
 
-  jmp LoadPalette
-LoadPatternMain:
-  jmp LoadPattern
+  jsr LoadPalette
+  jsr LoadPattern
+  jsr DisplayBread
 
 Main:
   jmp Main
@@ -34,6 +34,7 @@ VBlank:
   include 'palettes/vga.asm'
   include 'patterns/demo.asm'
   include 'patterns/font.asm'
+  include 'patterns/bread.asm'
 
 RomEnd:
   ORG $003FFFFF
