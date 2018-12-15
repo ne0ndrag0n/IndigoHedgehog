@@ -7,6 +7,9 @@ SecurityCheck:
   beq.b   InitController         ; check HW version, if it's zero, skip the TMSS routine
   move.l  #'SEGA', (REG_TMS)     ; write SEGA to TMSS register to enable VDP
 
+	; Set stack pointer all the way to end of Genesis RAM
+	move.l #$00FFFFFC, a7
+
 InitController:
   move.b #$40, (CTRL_1_CONTROL)
   move.b #$40, (CTRL_1_DATA)

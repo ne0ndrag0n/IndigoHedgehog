@@ -7,7 +7,7 @@
   dc.b	'J               '	; I/O device support (unused)
   dc.l	$00000000			; address of ROM start
   dc.l	RomEnd				; address of ROM end
-  dc.l	$FFFF0000,$FFFFFFFF	; RAM start/end
+  dc.l	$00FF0000,$00FFFFFF	; RAM start/end
   dc.b	'            '		; backup RAM info
   dc.b	'            '		; modem info
   dc.b	'http://huguesjohnson.com/               ' ; comment
