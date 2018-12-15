@@ -29,9 +29,6 @@ HBlank:
 VBlank:
   rte
 
-  include 'constants/vdpinit.asm'
-
-  include 'vdp/mod.asm'
   include 'modules/mod.asm'
 
   ORG $00001000

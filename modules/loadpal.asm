@@ -1,3 +1,5 @@
+  include 'modules/static_vdp/mod.asm'
+
 LoadPalette:
   ; Set DMA to read 16 words
   VDPSetRegister 20, $00
