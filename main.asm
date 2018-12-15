@@ -10,9 +10,11 @@
   jsr LoadPattern
   jsr DisplayBread
 
-  move.l #( String_Bread ), -(a7)
-  move.w #$0005, -(a7)
+  move.l #( String_Bread ), -(sp)
+  move.w #$0005, -(sp)
   jsr DrawText
+  move.w (sp)+, d0
+  move.l (sp)+, d0
 
 Main:
   jmp Main
