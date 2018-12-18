@@ -12,6 +12,8 @@ DrawText:
 
   move.l 6(a7), a0                        ; Load string address into a0
 
+  move.w  #$0, d0                         ; Clear up d0 so we can write a whole word to VDP
+
   ; Write ascii value in terms of index
 StringLoop:
   move.b  (a0)+, d0                      ; Check if string is null-terminated and break if zero
@@ -21,7 +23,7 @@ StringLoop:
   subi.b  #$20, d0                      ; Subtract 32 from ascii value (because text is located at top of rom)
   move.w  d0, (VDP_DATA)                ; Write data
 
-  jmp StringLoop
+  bra.s StringLoop
 StringLoop_End:
   rts
 

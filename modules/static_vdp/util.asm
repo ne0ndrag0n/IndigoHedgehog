@@ -3,6 +3,7 @@ H_STATIC_VDP_UTIL = 1
 
 ; xx yy - Tile index
 ; pp pp - Plane nametable VRAM address
+; Returns: Computed nametable address
 WriteVDPNametableLocation:
   move.l  #$0, d0                       ; clear d0 and d1
   move.l  #$0, d1
@@ -38,7 +39,7 @@ WriteVDPNametableLocation:
 
   move.l  d0, (VDP_CONTROL)             ; Write VDP control word containing VRAM address
   move.l  #$0, (sp)
-  move.l (sp)+, d0                      ; Pop value from stack cleanly
+  move.l (sp)+, d1                      ; Pop value from stack cleanly
 
   rts
 

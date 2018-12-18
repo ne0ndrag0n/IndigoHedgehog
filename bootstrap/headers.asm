@@ -10,5 +10,5 @@
   dc.l	$00FF0000,$00FFFFFF	; RAM start/end
   dc.b	'            '		; backup RAM info
   dc.b	'            '		; modem info
-  dc.b	'http://huguesjohnson.com/               ' ; comment
+  dc.b	'                                        ' ; comment
   dc.b	'JUE             '	; regions allowed
