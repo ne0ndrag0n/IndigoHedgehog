@@ -25,20 +25,19 @@ WriteVDPNametableLocation:
   move.l  d0, -(sp)                     ; push vram address onto stack
   move.l  #VDP_VRAM_WRITE, d0           ; Start preparing VDP control word
   move.l  (sp), d1
-  andi.l  #$3FFF, d1                    ; address & $3FFF
+  andi.w  #$3FFF, d1                    ; address & $3FFF
   lsl.l   #$07, d1
   lsl.l   #$07, d1
   lsl.l   #$02, d1                      ; << 16
   or.l    d1, d0                        ; VDP_VRAM_WRITE | ( ( address & $3FFF ) << 16 )
 
   move.l  (sp), d1
-  andi.l  #$C000, d1                    ; address & $C000
-  lsr.l   #$07, d1
-  lsr.l   #$07, d1                      ; >> 14
-  or.l    d1, d0                        ; VDP_VRAM_WRITE | ( ( address & $C000 ) >> 14 )
+  andi.w  #$C000, d1                    ; address & $C000
+  lsr.w   #$07, d1
+  lsr.w   #$07, d1                      ; >> 14
+  or.l    d1, d0                        ; ... | ( ( address & $C000 ) >> 14 )
 
   move.l  d0, (VDP_CONTROL)             ; Write VDP control word containing VRAM address
-  move.l  #$0, (sp)
   move.l (sp)+, d1                      ; Pop value from stack cleanly
 
   rts

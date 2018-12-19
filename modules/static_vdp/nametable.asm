@@ -10,11 +10,29 @@ H_STATIC_VDP_NAMETABLE = 1
 ; pw - Plane width in cells
 ; aa - Tile attribute (priority (1), palette (2), vflip (1), hflip (1))
 BlitPattern:
+  ; calculate vdp nametable address using [pp pp] and [xx yy]
   ; for each hh
-  ; calculate + set vdp nametable address using [pp pp] and [xx yy] (seems expensive...)
+  ; shift around and write vdp nametable address
   ;   for each ww
   ;   write index [rr rr] to vdp control word using [aa] attributes (vdp will autoincrement one word)
   ;   increment [rr rr]
+  ; step by pw
+
+  move.l  0, d0
+  move.l  0, d1
+  move.l  0, d2
+
+  move.b  5(sp), d2                   ; move yy into d2
+
+  mulu.w  #VDP_PLANE_CELLS_H, d2      ; yy * VDP_PLANE_CELLS_H
+
+  move.b  4(sp), d0
+  add.w   d0, d2                      ; + xx
+
+  mulu.w  #$0002, d2                  ; times 2 - d2 now contains cell number
+
+  add.w   10(sp), d2                  ; d2 now contains actual plane address
+                                      ; save this to increment and format for vdp control long
 
 BlitPattern_ForEachHH:
   move.b  7(sp), d0                   ; Break if hh is zero
@@ -25,10 +43,21 @@ BlitPattern_ForEachHH:
   subi.b  #$01, d0
   move.b  d0, 7(sp)
 
-  move.w  10(sp), -(sp)               ; Copy pp pp
-  move.w  6(sp), -(sp)                ; Copy xx yy
-  jsr WriteVDPNametableLocation
-  move.l  (sp)+, d0                   ; Pop values
+  move.l  #VDP_VRAM_WRITE, d0         ; Here we format the VDP control longword
+  move.l  d2, d1
+  andi.w  #$3FFF, d1                  ; address & $3FFF
+  lsl.l   #7, d1
+  lsl.l   #7, d1
+  lsl.l   #2, d1                      ; << 16
+  or.l    d1, d0                      ; VDP_VRAM_WRITE | ( ( address & $3FFF ) << 16 )
+
+  move.l  d2, d1
+  andi.w  #$C000, d1                  ; address & $C000
+  lsr.w   #7, d1
+  lsr.w   #7, d1                      ; >> 14
+  or.l    d1, d0                      ; VDP_VRAM_WRITE | ( ( address & $C000 ) >> 14 )
+
+  move.l  d0, (VDP_CONTROL)
 
   move.b  6(sp), d1                   ; d1 = ww
 
@@ -36,7 +65,7 @@ BlitPattern_ForEachWW:
   tst.b   d1                          ; Stop when d1 is 0
   beq.s   BlitPattern_ForEachWWEnd
 
-  subi.b #$01, d1                     ; d1--
+  subi.b  #$01, d1                    ; d1--
 
   move.w  13(sp), d0                  ; d0 = aa << 11
   lsl.w   #$07, d0
@@ -47,16 +76,18 @@ BlitPattern_ForEachWW:
   move.w  d0, (VDP_DATA)              ; Write tile index + settings to plane nametable
                                       ; VDP shall autoincrement by 1 word
 
-  move.w 8(sp), d0                    ; (rr rr)++
-  addi.w #$01, d0
-  move.w d0, 8(sp)
+  move.w  8(sp), d0                   ; (rr rr)++
+  addi.w  #$01, d0
+  move.w  d0, 8(sp)
 
-  bra.s BlitPattern_ForEachWW
+  bra.s   BlitPattern_ForEachWW
 BlitPattern_ForEachWWEnd:
 
-  ; TODO: not finished. Increment xx by a whole column? This seems expensive...
+  move.w  #0, d0
+  move.b  12(sp), d0
+  add.w   d0, d2                      ; advance d2 by an entire row
 
-  bra.s BlitPattern_ForEachHH
+  bra.s   BlitPattern_ForEachHH
 BlitPattern_ForEachHHEnd:
   rts
 
