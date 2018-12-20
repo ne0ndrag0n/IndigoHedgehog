@@ -8,16 +8,35 @@
 
   jsr LoadPalette
   jsr LoadPattern
-  jsr DisplayBread
 
   move.l #( String_Bread ), -(sp)
   move.w #$0005, -(sp)
   jsr DrawText
-  move.w (sp)+, d0
-  move.l (sp)+, d0
+  move.l  sp, d0                          ; Clean up stack
+  addi.l  #6, d0
+  move.l  d0, sp
+
+  move.w  #$0020, -(sp)                   ; 0 priority, palette 2, no flips
+  move.w  #VDP_PLANE_A, -(sp)             ; Draw to plane A
+  move.w  #$0060, -(sp)                   ; Bread gets loaded at numeric index 0x0060
+  move.w  #$0605, -(sp)                   ; Bread is a 6x5 tile image
+  move.w  #$0505, -(sp)                   ; We're moving bread *under* the text now
+  jsr BlitPattern
+  move.l  sp, d0                          ; Clean up stack
+  addi.l  #10, d0
+  move.l  d0, sp
 
 Main:
   jmp Main
+
+BusError:
+  rte
+
+AddressError:
+  rte
+
+IllegalInstr:
+  rte
 
 TrapException:
   rte
@@ -26,9 +45,12 @@ ExternalInterrupt:
   rte
 
 HBlank:
+  nop
   rte
 
 VBlank:
+  nop
+  nop
   rte
 
   include 'modules/mod.asm'

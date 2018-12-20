@@ -3,12 +3,12 @@ H_STATIC_VDP_NAMETABLE = 1
 
 ; Example bread is 6x5 located at index 0x0060
 
+; TODO: Callee-saved d2 register for gcc compatibility
 ; xx yy - Location on plane
 ; ww hh - Width and height of pattern
 ; rr rr - Root pattern index (8x8 numeric index, not address)
 ; pp pp - Root plane address
-; pw - Plane width in cells
-; aa - Tile attribute (priority (1), palette (2), vflip (1), hflip (1))
+; 00 aa - Tile attribute (priority (1), palette (2), vflip (1), hflip (1))
 BlitPattern:
   ; calculate vdp nametable address using [pp pp] and [xx yy]
   ; for each hh
@@ -18,9 +18,9 @@ BlitPattern:
   ;   increment [rr rr]
   ; step by pw
 
-  move.l  0, d0
-  move.l  0, d1
-  move.l  0, d2
+  move.l  #0, d0
+  move.l  #0, d1
+  move.l  #0, d2
 
   move.b  5(sp), d2                   ; move yy into d2
 
@@ -67,9 +67,9 @@ BlitPattern_ForEachWW:
 
   subi.b  #$01, d1                    ; d1--
 
-  move.w  13(sp), d0                  ; d0 = aa << 11
+  move.w  12(sp), d0                  ; d0 = aa << 8
   lsl.w   #$07, d0
-  lsl.w   #$04, d0
+  lsl.w   #$01, d0
 
   or.w    8(sp), d0                   ; d0 = d0 | rr rr
 
@@ -83,9 +83,9 @@ BlitPattern_ForEachWW:
   bra.s   BlitPattern_ForEachWW
 BlitPattern_ForEachWWEnd:
 
-  move.w  #0, d0
-  move.b  12(sp), d0
-  add.w   d0, d2                      ; advance d2 by an entire row
+  move.w  #( $0000 | VDP_PLANE_CELLS_H ), d0      ; advance d2 by (row * 2)
+  lsl.w   #1, d0
+  add.w   d0, d2
 
   bra.s   BlitPattern_ForEachHH
 BlitPattern_ForEachHHEnd:

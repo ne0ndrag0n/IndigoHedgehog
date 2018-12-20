@@ -1,8 +1,8 @@
-  dc.l	$FFFFFE00		; Stack pointer
-  dc.l	Start			; Code start
-  dc.l	TrapException	; Bus error
-  dc.l	TrapException	; Address error
-  dc.l	TrapException	; Illegal instruction
+  dc.l	$FFFFFE00		  ; Stack pointer
+  dc.l	Start			    ; Code start
+  dc.l	BusError	    ; Bus error
+  dc.l	AddressError	; Address error
+  dc.l	IllegalInstr	; Illegal instruction
   dc.l	TrapException	; Divistion by zero
   dc.l	TrapException	; CHK exception
   dc.l	TrapException	; TRAPV exception
