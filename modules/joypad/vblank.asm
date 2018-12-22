@@ -1,8 +1,6 @@
  ifnd H_JOYPAD_VBLANK
 H_JOYPAD_VBLANK = 1
 
-JOYPAD_STATE_1 = $FF0010
-
 JoypadVBlank:
   RequestZ80Bus
   jsr WaitForZ80Bus
