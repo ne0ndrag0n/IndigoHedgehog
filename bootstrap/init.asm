@@ -10,6 +10,10 @@ SecurityCheck:
 	; Set stack pointer all the way to end of Genesis RAM
 	move.l #$00FFFFFC, a7
 
+	RequestZ80Bus
+	ResetZ80
+	jsr WaitForZ80Bus
+
 InitController:
   move.b #$40, (CTRL_1_CONTROL)
   move.b #$40, (CTRL_1_DATA)
@@ -17,6 +21,8 @@ InitController:
   move.b #$40, (CTRL_2_DATA)
   move.b #$40, (ACCESSORY_CONTROL)
   move.b #$40, (ACCESSORY_DATA)
+
+	ReturnZ80Bus
 
 InitVDP:
 	lea 		(VDPInitData), a0

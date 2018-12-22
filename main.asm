@@ -1,6 +1,6 @@
   ORG $00000000
 
-  include 'system/interrupts.asm'
+  include 'system/macros.asm'
   include 'constants/system.asm'
   include 'bootstrap/vectors.asm'
   include 'bootstrap/headers.asm'
@@ -49,8 +49,21 @@ HBlank:
   rte
 
 VBlank:
-  nop
-  nop
+  move.b  $FF0000, d0         ; Test if vblank is in progress
+  tst.b   d0
+  bne.s   EndVBlank           ; Nonzero means we're already doing a vblank - stop, get out!
+
+  ori.b  #$01, d0             ; Overlay a 1 onto the interrupt status
+  move.b d0, $FF0000
+
+  ; vblank stuff goes here
+  jsr JoypadVBlank
+
+  move.b  $FF0000, d0         ; Unset status bit
+  andi.b  #$FE, d0
+  move.b  d0, $FF0000
+
+EndVBlank:
   rte
 
   include 'modules/mod.asm'
