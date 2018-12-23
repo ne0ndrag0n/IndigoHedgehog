@@ -3,6 +3,7 @@ H_STATIC_VDP_UTIL = 1
 
 ; xx yy - Tile index
 ; pp pp - Plane nametable VRAM address
+; 00 ss - Status, in bits: 0000 0000 for vram write, 0000 0001 for vram read
 ; Returns: Computed nametable address
 WriteVDPNametableLocation:
   move.l  #$0, d0                       ; clear d0 and d1
@@ -23,7 +24,19 @@ WriteVDPNametableLocation:
   add.w   6(sp), d0                     ; d0 now contains address
 
   move.l  d0, -(sp)                     ; push vram address onto stack
+
+  move.w  12(sp), d0                     ; Check for type of operation - read or write
+  btst    #0, d0
+  beq.s   WriteVDPNametableLocation_VramWrite
+
+WriteVDPNametableLocation_VramRead:
+  move.l  #VDP_VRAM_READ,  d0
+  bra.s   WriteVDPNametableLocation_WriteAddress
+
+WriteVDPNametableLocation_VramWrite:
   move.l  #VDP_VRAM_WRITE, d0           ; Start preparing VDP control word
+
+WriteVDPNametableLocation_WriteAddress:
   move.l  (sp), d1
   andi.w  #$3FFF, d1                    ; address & $3FFF
   lsl.l   #$07, d1

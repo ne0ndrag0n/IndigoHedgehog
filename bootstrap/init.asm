@@ -1,3 +1,6 @@
+ include 'modules/z80/constants.asm'
+ include 'modules/interrupts/constants.asm'
+
 Start:
 	DisableInterrupts
 

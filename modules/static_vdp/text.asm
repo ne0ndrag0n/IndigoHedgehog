@@ -5,10 +5,13 @@ H_STATIC_VDP_TEXT = 1
 ; String address: ss ss ss ss
 DrawText:
   ; DrawText works with VDP_PLANE_A exclusively
+  move.w  #$0000, -(sp)
   move.w  #VDP_PLANE_A, -(sp)             ; Push plane addr
-  move.w  6(sp), -(sp)                    ; Copy coordinates
+  move.w  8(sp), -(sp)                    ; Copy coordinates
   jsr WriteVDPNametableLocation
-  move.l  d1, (sp)+                       ; Pop coords after writing VDP word
+  move.l  sp, d0
+  addi.l  #6, d0
+  move.l  d0, sp                          ; Pop coords after writing VDP word
 
   move.l 6(a7), a0                        ; Load string address into a0
 

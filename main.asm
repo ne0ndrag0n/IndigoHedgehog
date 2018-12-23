@@ -1,6 +1,5 @@
   ORG $00000000
 
-  include 'system/macros.asm'
   include 'constants/system.asm'
   include 'bootstrap/vectors.asm'
   include 'bootstrap/headers.asm'
@@ -25,6 +24,22 @@
   move.l  sp, d0                          ; Clean up stack
   addi.l  #10, d0
   move.l  d0, sp
+
+  ; Test writing to sprite attribute table
+  ; sprite located at 128, 128, tile index 1
+  ; 0080 0000 0001 0080
+  move.w  #$0000, -(sp)
+  move.w  #VDP_SPRITES, -(sp)
+  move.w  #$0000, -(sp)
+  jsr WriteVDPNametableLocation
+  move.l  sp, d0
+  addi.l  #6, d0
+  move.l  d0, sp
+
+  move.w  #$0080, (VDP_DATA)
+  move.w  #$0000, (VDP_DATA)
+  move.w  #$0001, (VDP_DATA)
+  move.w  #$0080, (VDP_DATA)
 
 Main:
   jmp Main
