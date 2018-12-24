@@ -33,18 +33,25 @@ WriteVDPNametableLocation:
   rts
 
 ; 00 00 pp pp - Destination VRAM address
-; 00 ss - Status, in bits: 0000 0000 for vram write, 0000 0001 for vram read, 1000 0000 for DMA
+; 00 ss - Status, in bits: 0000 0000 for vram write, 0000 0001 for vram read, 0000 0010 for cram write, 1000 0000 for DMA
 ; Returns: Computed nametable address
 ComputeVdpDestinationAddress:
-  move.w  8(sp), d1                     ; Check for type of operation - read or write
-  btst    #0, d1
-  beq.s   ComputeVdpDestinationAddress_VramWrite
+  move.w  8(sp), d1                                 ; Check for VRAM Read
+  btst    #0, d1                                    ; If bit 0 is clear
+  beq.s   ComputeVdpDestinationAddress_CheckCram    ; it's CRAM or VRAM write
 
-  move.l  #VDP_VRAM_READ,  d0
+  move.l  #VDP_VRAM_READ, d0
   bra.s   ComputeVdpDestinationAddress_CheckDMA
 
-ComputeVdpDestinationAddress_VramWrite:
-  move.l  #VDP_VRAM_WRITE, d0           ; Start preparing VDP control word
+ComputeVdpDestinationAddress_CheckCram:
+  btst    #1, d1                                    ; Check for CRAM write - if bit 1 is clear
+  beq.s   ComputeVdpDestinationAddress_WriteVram    ; it's VRAM write
+
+  move.l  #VDP_CRAM_WRITE, d0
+  bra.s   ComputeVdpDestinationAddress_CheckDMA
+
+ComputeVdpDestinationAddress_WriteVram:
+  move.l  #VDP_VRAM_WRITE, d0
 
 ComputeVdpDestinationAddress_CheckDMA:
   btst    #7, d1                        ; Check if DMA is being applied
@@ -66,6 +73,32 @@ ComputeVdpDestinationAddress_WriteAddress:
   lsr.w   #$07, d1
   lsr.w   #$07, d1                      ; >> 14
   or.l    d1, d0                        ; ... | ( ( address & $C000 ) >> 14 )
+  rts
+
+; aa aa aa aa - Source address for VDP DMA
+WriteDmaSourceAddress:
+  move.l  4(sp), d0                     ; Fetch source address and divide by 2
+  lsr.l   #1, d0
+  move.l  d0, 4(sp)
+
+  andi.l  #$007F0000, d0                ; Take only the top byte
+  lsr.l   #7, d0                        ; >> 16
+  lsr.l   #7, d0
+  lsr.l   #2, d0
+
+  VDPSetRegisterRuntime 23, d0
+
+  move.l  4(sp), d0                     ; Write middle byte
+  andi.l  #$0000FF00, d0                ; Take only middle bits
+  lsr.l   #7, d0                        ; >> 8
+  lsr.l   #1, d0
+
+  VDPSetRegisterRuntime 22, d0
+
+  move.l  4(sp), d0                     ; Write lower byte
+  andi.l  #$000000FF, d0                ; Take only lower byte
+
+  VDPSetRegisterRuntime 21, d0
   rts
 
  endif

@@ -8,5 +8,6 @@ H_STATIC_VDP_MOD = 1
  include 'modules/static_vdp/util.asm'
  include 'modules/static_vdp/pattern.asm'
  include 'modules/static_vdp/dma.asm'
+ include 'modules/static_vdp/palette.asm'
 
  endif
