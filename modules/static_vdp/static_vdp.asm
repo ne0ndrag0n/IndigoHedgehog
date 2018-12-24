@@ -13,7 +13,7 @@ VDPInitData:
   VDPDefineRegisterConstant 10, $00                               ; Number of lines used to generate hsync interrupt
   VDPDefineRegisterConstant 11, $00                               ; Full-screen scroll with no external interrupts
   VDPDefineRegisterConstant 12, $81                               ; 40-cell across display with no interlace
-  VDPDefineRegisterConstant 13, $2f                               ; Horizontal scroll metadata located at $BC00
+  VDPDefineRegisterConstant 13, ( VDP_HSCROLL / $400 )            ; Horizontal scroll metadata
   VDPDefineRegisterConstant 14, $00                               ; 128kb mode stuff is always 0
   VDPDefineRegisterConstant 15, $02                               ; VDP address register will always increment by 2
   VDPDefineRegisterConstant 16, ( VDP_CELL_Y << 5 | VDP_CELL_X )  ; Nametables are 64 across and 32 down

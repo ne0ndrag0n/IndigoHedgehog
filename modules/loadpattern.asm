@@ -1,4 +1,4 @@
-LoadPattern:
+LoadDemoPatterns:
   ; Set DMA to read 1536 words (768 longwords, or 96 tiles)
   VDPSetRegister 20, $06
   VDPSetRegister 19, $00

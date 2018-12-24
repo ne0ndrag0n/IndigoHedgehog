@@ -6,5 +6,7 @@ H_STATIC_VDP_MOD = 1
  include 'modules/static_vdp/text.asm'
  include 'modules/static_vdp/nametable.asm'
  include 'modules/static_vdp/util.asm'
+ include 'modules/static_vdp/pattern.asm'
+ include 'modules/static_vdp/dma.asm'
 
  endif

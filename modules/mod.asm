@@ -1,6 +1,7 @@
  include 'modules/loadpal.asm'
  include 'modules/loadpattern.asm'
 
+ include 'modules/helpers/mod.asm'
  include 'modules/interrupts/mod.asm'
  include 'modules/static_vdp/mod.asm'
  include 'modules/joypad/mod.asm'
