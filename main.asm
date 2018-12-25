@@ -7,9 +7,6 @@
 
   jsr LoadTitlescreen
 
-Main:
-  jmp Main
-
 BusError:
   rte
 
@@ -51,14 +48,7 @@ EndVBlank:
   rte
 
   include 'modules/mod.asm'
-
-  ORG $00001000
-  include 'palettes/vga.asm'
-  include 'patterns/demo.asm'
-  include 'patterns/font.asm'
-  include 'patterns/bread.asm'
-  include 'patterns/space2.asm'
-  include 'patterns/logo.asm'
+  include 'data/mod.asm'
   include 'constants/en_US.asm'
 
 RomEnd:
