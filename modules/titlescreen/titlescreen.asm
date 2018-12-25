@@ -39,27 +39,26 @@ LoadTitlescreen:
 
   ; Draw text items
   move.l #( String_1PGame ), -(sp)
-  move.w #$1810, -(sp)
+  move.w #$1911, -(sp)
   jsr DrawText
   PopStack 6
 
   move.l #( String_HeadToHead ), -(sp)
-  move.w #$1812, -(sp)
+  move.w #$1913, -(sp)
   jsr DrawText
   PopStack 6
 
   move.l #( String_Online ), -(sp)
-  move.w #$1814, -(sp)
+  move.w #$1915, -(sp)
   jsr DrawText
   PopStack 6
 
   move.l #( String_Settings ), -(sp)
-  move.w #$1816, -(sp)
+  move.w #$1917, -(sp)
   jsr DrawText
   PopStack 6
 
-
-ShowTitlescreen:
-  bra.s ShowTitlescreen
+TitlescreenMain:
+  bra.s TitlescreenMain
 
   endif
