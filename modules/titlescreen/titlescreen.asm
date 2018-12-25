@@ -2,26 +2,18 @@
 H_TITLESCREEN = 1
 
 LoadTitlescreen:
-  jsr LoadPalettes
-  jsr LoadPatterns
+  VdpLoadPaletteDma #VDP_PAL_0, #VGAPalette
+  VdpLoadPaletteDma #VDP_PAL_1, #Bread
+  VdpLoadPaletteDma #VDP_PAL_2, #SpacePal
+  VdpLoadPaletteDma #VDP_PAL_3, #LogoPalette
 
-  ; Draws the background
-  move.w  #$0040, -(sp)
-  move.w  #VDP_PLANE_B, -(sp)
-  move.w  #$007E, -(sp)
-  move.w  #$281C, -(sp)
-  move.w  #$0000, -(sp)
-  jsr BlitPattern
-  PopStack 10
+  VdpLoadPatternDma #TS_FONT_LOCATION,  #96,   #Font
+  VdpLoadPatternDma #TS_BREAD_LOCATION, #30,   #BreadPattern
+  VdpLoadPatternDma #TS_SPACE_LOCATION, #1120, #SpacePattern
+  VdpLoadPatternDma #TS_LOGO_LOCATION,  #36,   #LogoPattern
 
-  ; Draws the logo
-  move.w  #$0060, -(sp)
-  move.w  #VDP_PLANE_A, -(sp)
-  move.w  #$04DE, -(sp)
-  move.w  #$0C03, -(sp)
-  move.w  #$0305, -(sp)
-  jsr BlitPattern
-  PopStack 10
+  VdpBlitPattern #$0000, #$281C, #TS_SPACE_LOCATION, #VDP_PLANE_B, #$0040 ; Draw the background
+  VdpBlitPattern #$0305, #$0C03, #TS_LOGO_LOCATION,  #VDP_PLANE_A, #$0060 ; Draw the logo
 
   ; Test writing to sprite attribute table
   ; sprite located at 128, 128, tile index 1
@@ -38,27 +30,15 @@ LoadTitlescreen:
   ;move.w  #$0080, (VDP_DATA)
 
   ; Draw text items
-  move.l #( String_1PGame ), -(sp)
-  move.w #$1911, -(sp)
-  jsr DrawText
-  PopStack 6
-
-  move.l #( String_HeadToHead ), -(sp)
-  move.w #$1913, -(sp)
-  jsr DrawText
-  PopStack 6
-
-  move.l #( String_Online ), -(sp)
-  move.w #$1915, -(sp)
-  jsr DrawText
-  PopStack 6
-
-  move.l #( String_Settings ), -(sp)
-  move.w #$1917, -(sp)
-  jsr DrawText
-  PopStack 6
+  VdpDrawText #$1911, #String_1PGame
+  VdpDrawText #$1913, #String_HeadToHead
+  VdpDrawText #$1915, #String_Online
+  VdpDrawText #$1917, #String_Settings
 
 TitlescreenMain:
   bra.s TitlescreenMain
+
+ExitTitlescreen:
+  bra.s ExitTitlescreen
 
   endif

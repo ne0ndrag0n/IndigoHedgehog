@@ -18,6 +18,38 @@ H_STATIC_VDP_CONSTANTS = 1
     move.w  d1, (VDP_CONTROL)
   endm
 
+  macro VdpLoadPaletteDma
+    move.l  \2, -(sp)
+    move.w  \1, -(sp)
+    jsr LoadPaletteDma
+    PopStack 6
+  endm
+
+  macro VdpLoadPatternDma
+    move.l  \3, -(sp)
+    move.w  \2, -(sp)
+    move.w  \1, -(sp)
+    jsr LoadPatternDma
+    PopStack 8
+  endm
+
+  macro VdpBlitPattern
+    move.w  \5, -(sp)
+    move.w  \4, -(sp)
+    move.w  \3, -(sp)
+    move.w  \2, -(sp)
+    move.w  \1, -(sp)
+    jsr BlitPattern
+    PopStack 10
+  endm
+
+  macro VdpDrawText
+    move.l  \2, -(sp)
+    move.w  \1, -(sp)
+    jsr DrawText
+    PopStack 6
+  endm
+
 ; VDP is currently structured to be fully static
 VDP_PLANE_A=$C000
 VDP_PLANE_B=$E000

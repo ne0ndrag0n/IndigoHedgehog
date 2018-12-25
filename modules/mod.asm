@@ -3,5 +3,4 @@
  include 'modules/static_vdp/mod.asm'
  include 'modules/joypad/mod.asm'
  include 'modules/z80/mod.asm'
- include 'modules/init/mod.asm'
  include 'modules/titlescreen/mod.asm'

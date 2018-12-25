@@ -164,4 +164,26 @@ BlitFill_ForEachHHEnd:
   move.l  (sp)+, d2                  ; Restore d2
   rts
 
+; xx yy - Location on plane
+; rr rr - Desired pattern index
+; pp pp - Root plane address
+; 00 aa - Tile attribute (priority (1), palette (2), vflip (1), hflip (1))
+BlitSingleTile:
+  move.w  #0, -(sp)         ; vram write no dma
+  move.w  10(sp), -(sp)     ; Copy plane nametable vram address
+  move.w  8(sp), -(sp)      ; Copy desired location on nametable
+  jsr WriteVDPNametableLocation
+  PopStack 6
+
+  move.l  #0, d1
+
+  move.w  10(sp), d1        ; attribute << 8
+  lsl.w   #7, d1
+  lsl.w   #1, d1
+
+  or.w    6(sp), d1         ; OR the desired nametable item
+
+  move.l  d1, (VDP_DATA)    ; Write to the vdp
+  rts
+
  endif
