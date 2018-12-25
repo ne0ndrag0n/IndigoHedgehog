@@ -29,6 +29,9 @@ HBlank:
   rte
 
 VBlank:
+  include 'modules/helpers/context.asm'
+  ContextSave
+
   move.b  $FF0000, d0         ; Test if vblank is in progress
   tst.b   d0
   bne.s   EndVBlank           ; Nonzero means we're already doing a vblank - stop, get out!
@@ -44,6 +47,7 @@ VBlank:
   move.b  d0, $FF0000
 
 EndVBlank:
+  ContextRestore
   rte
 
   include 'modules/mod.asm'
@@ -53,9 +57,10 @@ EndVBlank:
   include 'patterns/demo.asm'
   include 'patterns/font.asm'
   include 'patterns/bread.asm'
+  include 'patterns/space.asm'
   include 'constants/en_US.asm'
 
 RomEnd:
-  ORG $00003000
+  ORG $00010000
   dc.b %11111111
   end 0

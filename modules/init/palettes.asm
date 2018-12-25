@@ -11,6 +11,11 @@ LoadPalettes:
   move.w  #VDP_PAL_1, -(sp)
   jsr LoadPaletteDma
   PopStack 6
+
+  move.l  #SpacePal, -(sp)
+  move.w  #VDP_PAL_2, -(sp)
+  jsr LoadPaletteDma
+  PopStack 6
   rts
 
   endif
