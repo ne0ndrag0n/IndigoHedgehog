@@ -4,7 +4,7 @@ use std::process::exit;
 
 pub struct TilesetGenerator {
     image: DynamicImage,
-    palette: [ u16; 16 ]
+    palette: Vec< u16 >
 }
 
 impl TilesetGenerator {
@@ -23,22 +23,16 @@ impl TilesetGenerator {
             Err( _ ) => return Err( "Could not open image file!" )
         };
 
+        let mut default_palette = Vec::new();
+        default_palette.push( 0x0000 );
+
         Ok( TilesetGenerator {
             image: dynamic_image,
-            palette: [
-                0x0000,0x0800,0x0080,0x0880,0x0008,0x0808,0x0088,0x0CCC,
-                0x0888,0x0E00,0x00E0,0x0EE0,0x000E,0x0E0E,0x00EE,0x0EEE
-            ]
-            /*
-            [
-                0x0000, 0x079c, 0x079d, 0x089d, 0x08ad, 0x08ad, 0x08be, 0x09be,
-                0x09ce, 0x09ce, 0x09ce, 0x0acf, 0x0adf, 0x0adf, 0x0bef, 0x0bef
-            ]
-            */
+            palette: default_palette
         } )
     }
 
-    fn get_nearest_colour( &self, r: u16, g: u16, b: u16 ) -> usize {
+    fn get_nearest_colour( &mut self, r: u16, g: u16, b: u16 ) -> usize {
         // Take upper byte of each colour and move them into the correct BGR location
         let final_val =
             ( ( r & 0x00F0 ) >> 4 ) |
@@ -51,8 +45,13 @@ impl TilesetGenerator {
             }
         }
 
-        println!( "fatal: Palette entry not found: {} {} {} hex:({:#X})", r, g, b, final_val );
-        exit( 2 );
+        if self.palette.len() == 16 {
+            println!( "fatal: Image contains more than 16 colours...stopping." );
+            exit( 2 );
+        }
+
+        self.palette.push( final_val );
+        self.palette.len() - 1
     }
 
     pub fn generate( &mut self, outfile: &str ) -> i32 {
@@ -78,6 +77,11 @@ impl TilesetGenerator {
 
                 result += &( segment + "\n" );
             }
+        }
+
+        result += "\nOutputPalette:\n";
+        for num in &self.palette {
+            result += &format!( "\tdc.w ${:01$x}\n", num, 4 );
         }
 
         match fs::write( outfile, result ) {

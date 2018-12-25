@@ -5,7 +5,7 @@
   include 'bootstrap/headers.asm'
   include 'bootstrap/init.asm'
 
-  jsr InitSubsystems
+  jsr LoadTitlescreen
 
 Main:
   jmp Main
@@ -57,7 +57,8 @@ EndVBlank:
   include 'patterns/demo.asm'
   include 'patterns/font.asm'
   include 'patterns/bread.asm'
-  include 'patterns/space.asm'
+  include 'patterns/space2.asm'
+  include 'patterns/logo.asm'
   include 'constants/en_US.asm'
 
 RomEnd:

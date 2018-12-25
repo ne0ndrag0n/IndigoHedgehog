@@ -20,6 +20,13 @@ LoadPatterns:
   move.w  #$007E, -(sp)
   jsr LoadPatternDma
   PopStack 8
+
+  ; 12 x 3
+  move.l  #LogoPattern, -(sp)
+  move.w  #36, -(sp)
+  move.w  #$04DE, -(sp)
+  jsr LoadPatternDma
+  PopStack 8
   rts
 
  endif
