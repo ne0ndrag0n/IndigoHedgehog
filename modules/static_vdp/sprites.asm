@@ -29,6 +29,13 @@ SPRITE_HFLIP=$0800
     PopStack 8
   endm
 
+  macro SpriteIndexToVram
+    ;(VDP_SPRITES + ( 8 * index ))
+    move.w  \1, d1            ; 8 * index
+    mulu.w  #8, d1
+    addi.w  #VDP_SPRITES, d1  ; + VDP_SPRITES
+  endm
+
 ; xx xx - Location of sprite, x
 ; yy yy - Location of sprite, y
 ; 00 hv - Horizontal and vertical size
@@ -200,6 +207,125 @@ FindNearestOpenSprite_JumpToNext:
 
 FindNearestOpenSprite_End:
   move.l  (sp)+, d2           ; Restore whatever d2 was
+  rts
+
+; 00 ii - Sprite ID
+; Returns: X position of sprite
+GetSpritePositionX:
+  SpriteIndexToVram   4(sp)
+  addi.w  #6, d1
+
+  move.w  d1, -(sp)
+  jsr ReadVramWord
+  PopStack 2
+
+  subi.w  #$80, d0
+  rts
+
+; 00 ii - Sprite ID
+; Returns: Y position of sprite
+GetSpritePositionY:
+  SpriteIndexToVram    4(sp)
+
+  move.w  d1, -(sp)
+  jsr ReadVramWord
+  PopStack 2
+
+  subi.w  #$80, d0
+  rts
+
+; 00 ii - Sprite ID
+; xx xx - New X position of sprite
+SetSpritePositionX:
+  SpriteIndexToVram     4(sp)
+  addi.w  #6, d1
+
+  move.w  6(sp), d0
+  addi.w  #$80, d0
+  move.w  d0, 6(sp)
+
+  move.w  6(sp), -(sp)
+  move.w  d1, -(sp)
+  jsr WriteVramWord
+  PopStack 4
+  rts
+
+; 00 ii - Sprite ID
+; yy yy - New Y position of sprite
+SetSpritePositionY:
+  SpriteIndexToVram     4(sp)
+
+  move.w  6(sp), d0
+  addi.w  #$80, d0
+  move.w  d0, 6(sp)
+
+  move.w  6(sp), -(sp)
+  move.w  d1, -(sp)
+  jsr WriteVramWord
+  PopStack 4
+  rts
+
+; 00 ii - Sprite ID
+; Returns: Attrib settings for given sprite
+GetSpriteSizeAttrib:
+  SpriteIndexToVram   4(sp)
+  addi.w  #2, d1
+
+  move.w  d1, -(sp)
+  jsr ReadVramWord
+  PopStack 2
+
+  andi.w  #$FF80, d0  ; Discard link attribute - it's none of your business!
+  rts
+
+; 00 ii - Sprite ID
+; dd dd - New sprite flip attributes
+SetSpriteSizeAttrib:
+  move.w  6(sp), d0   ; You can't overwrite the link data, so sanitize this away
+  andi.w  #$FF80, d0
+  move.w  d0, 6(sp)
+
+  SpriteIndexToVram   4(sp)
+  addi.w  #2, d1
+
+  move.l  d1, -(sp)   ; ReadVramWord may corrupt d1
+
+  move.w  d1, -(sp)   ; Get the original one to preserve its link data
+  jsr ReadVramWord
+  PopStack 2
+
+  move.l  (sp)+, d1   ; Restore d1
+
+  andi.w  #$007F, d0  ; Keep the link data we just fetched
+  or.w    d0, 6(sp)   ; Paint the existing link data on top of the new flip attrs
+
+  move.w  6(sp), -(sp)  ; Do vram write
+  move.w  d1, -(sp)
+  jsr WriteVramWord
+  PopStack 4
+  rts
+
+; 00 ii - Sprite ID
+; Returns: Tile attrib for given sprite
+GetSpriteTileAttrib:
+  SpriteIndexToVram   4(sp)
+  addi.w  #4, d1
+
+  move.w  d1, -(sp)
+  jsr ReadVramWord
+  PopStack 2
+  rts
+
+; 00 ii - Sprite ID
+; dd dd - New sprite tile attributes
+SetSpriteTileAttrib:
+  SpriteIndexToVram   4(sp)
+  addi.w  #4, d1
+
+  move.w  6(sp), -(sp)
+  move.w  d1, -(sp)
+  jsr WriteVramWord
+  PopStack 4
   rts
 
   endif

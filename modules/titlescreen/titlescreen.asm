@@ -22,6 +22,15 @@ LoadTitlescreen:
   VdpDrawText #$1915, #String_Online
   VdpDrawText #$1917, #String_Settings
 
+  ;005D is the arrow thing in the font
+  ;VdpNewSprite  #0, #0, #0, #TS_BUTTON_LOCATION
+
+  ;DebugPrintLabelHere
+  ;move.w  #0, -(sp)
+  ;move.w  #0, -(sp)
+  ;jsr SetSpriteSizeAttrib
+  ;PopStack 2
+
 TitlescreenMain:
   bra.s TitlescreenMain
 
