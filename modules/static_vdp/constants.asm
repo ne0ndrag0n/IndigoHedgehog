@@ -1,6 +1,9 @@
  ifnd H_STATIC_VDP_CONSTANTS
 H_STATIC_VDP_CONSTANTS = 1
 
+  ; 0 = 128 for any given sprite value
+  ; To go from real to retarded sprite coordinates, add 128/$80
+
   macro VDPDefineRegisterConstant
     dc.w ( ( $80 + \1 ) << 8 ) | \2
   endm
@@ -54,7 +57,8 @@ H_STATIC_VDP_CONSTANTS = 1
 VDP_PLANE_A=$C000
 VDP_PLANE_B=$E000
 VDP_WINDOW=$D000
-VDP_SPRITES=$B000
+VDP_SPRITES=$B800
+VDP_SPRITE_METADATA=VDP_SPRITES - 16
 VDP_HSCROLL=$BC00
 VDP_PLANE_CELLS_H=64
 VDP_PLANE_CELLS_V=32

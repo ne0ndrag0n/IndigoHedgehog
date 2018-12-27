@@ -101,4 +101,32 @@ WriteDmaSourceAddress:
   VDPSetRegisterRuntime 21, d0
   rts
 
+; aa aa - VRAM address
+; Returns: Word value at address
+ReadVramWord:
+  move.w  #$0001, -(sp)   ; Set vram read
+  move.w  6(sp), -(sp)
+  move.w  #0, -(sp)
+  jsr ComputeVdpDestinationAddress
+  PopStack 6
+
+  move.l  d0, (VDP_CONTROL)
+
+  move.w  VDP_DATA, d0    ; Read from vdp
+  rts
+
+; aa aa - VRAM address
+; ww ww - Contents to write
+WriteVramWord:
+  move.w  #$0000, -(sp)
+  move.w  6(sp), -(sp)
+  move.w  #0, -(sp)
+  jsr ComputeVdpDestinationAddress
+  PopStack 6
+
+  move.l  d0, (VDP_CONTROL)
+
+  move.w  6(sp), (VDP_DATA)
+  rts
+
  endif

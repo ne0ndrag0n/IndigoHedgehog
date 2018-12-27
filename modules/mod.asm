@@ -4,3 +4,5 @@
  include 'modules/joypad/mod.asm'
  include 'modules/z80/mod.asm'
  include 'modules/titlescreen/mod.asm'
+ include 'modules/inputmanager/mod.asm'
+ include 'modules/math/mod.asm'
