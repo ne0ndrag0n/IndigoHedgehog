@@ -16,20 +16,6 @@ LoadTitlescreen:
   VdpBlitPattern #$0000, #$281C, #TS_SPACE_LOCATION, #VDP_PLANE_B, #$0040 ; Draw the background
   VdpBlitPattern #$0305, #$0C03, #TS_LOGO_LOCATION,  #VDP_PLANE_A, #$0060 ; Draw the logo
 
-  ; Test writing to sprite attribute table
-  ; sprite located at 128, 128, tile index 1
-  ; 0080 0000 0001 0080
-  move.w  #$0000, -(sp)
-  move.l  #VDP_SPRITES, -(sp)
-  jsr ComputeVdpDestinationAddress
-  PopStack 4
-  move.l  d0, (VDP_CONTROL)
-
-  move.w  #$0080, (VDP_DATA)
-  move.w  #$0000, (VDP_DATA)
-  move.w  #$005D, (VDP_DATA)
-  move.w  #$0080, (VDP_DATA)
-
   ; Draw text items
   VdpDrawText #$1911, #String_1PGame
   VdpDrawText #$1913, #String_HeadToHead

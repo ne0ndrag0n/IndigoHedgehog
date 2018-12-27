@@ -20,6 +20,15 @@ SPRITE_PAL_3=$6000
 SPRITE_VFLIP=$1000
 SPRITE_HFLIP=$0800
 
+  macro VdpNewSprite
+    move.w  \4, -(sp)
+    move.w  \3, -(sp)
+    move.w  \2, -(sp)
+    move.w  \1, -(sp)
+    jsr NewSprite
+    PopStack 8
+  endm
+
 ; xx xx - Location of sprite, x
 ; yy yy - Location of sprite, y
 ; 00 hv - Horizontal and vertical size
@@ -49,17 +58,17 @@ NewSprite_Allocate:
 
   move.l  d0, (VDP_CONTROL)   ; Set VDP to write to this address
 
-  move.w  10(sp), d0          ; Load yy yy
+  move.w  6(sp), d0           ; Load yy yy
   addi.w  #$80, d0            ; All locations must be + 128
   move.w  d0, (VDP_DATA)      ; Write vertical position and autoincrement
 
-  move.w  12(sp), d0          ; Load hv size attributes
+  move.w  8(sp), d0           ; Load hv size attributes
   andi.w  #$FF80, d0          ; Don't keep any potential link field provided - This is the item at the end of the list
   move.w  d0, (VDP_DATA)      ; Write hv size attributes and link and autoincrement
 
-  move.w  14(sp), (VDP_DATA)  ; Load tile attribute data - No postprocessing required and autoincrement
+  move.w  10(sp), (VDP_DATA)  ; Load tile attribute data - No postprocessing required and autoincrement
 
-  move.w  8(sp), d0           ; Load xx xx
+  move.w  4(sp), d0           ; Load xx xx
   addi.w  #$80, d0            ; All locations must be + 128
   move.w  d0, (VDP_DATA)      ; Write horizontal position and autoincrement
 
@@ -84,40 +93,44 @@ NewSprite_Allocate:
   andi.w  #$FF80, d0          ; Clear the link attribute for good measure
   or.w    d1, d0              ; OR the latest sprite attribute table index, onto the word we just fetched
 
-  ; Don't really give a shit about preserving registers by this point
+  move.l  d1, -(sp)           ; We still need d1 for the return value!
+
   move.w  d0, -(sp)           ; Write those contents to VRAM
   move.w  d2, -(sp)           ; At the same address we read from
   jsr WriteVramWord
   PopStack 4
 
-  move.l  (sp)+, d2
+  move.l  (sp)+, d1           ; Restore d1
+  move.w  d1, d0              ; Return the index of the item we created
+
+  move.l  (sp)+, d2           ; Slip d2 back
   rts
 
 ; Returns: The nearest open "slot" in the sprite attribute table. -1 if we're out of sprites.
 ; Longword - High word contains the index of the last zero item. Low word contains the next item ready to use.
 FindNearestOpenSprite:
-  move.w  #VDP_SPRITES, d0      ; First thing we want to do is check for the default position
+  move.w  #VDP_SPRITES, -(sp)   ; First thing we want to do is check for the default position
   jsr ReadVramWord              ; That's all four words in the first entry being 0
   PopStack 2
 
   tst.w   d0
   bne.s   FindNearestOpenSprite_Continue
 
-  move.w  #VDP_SPRITES + 2, d0
+  move.w  #VDP_SPRITES + 2, -(sp)
   jsr ReadVramWord
   PopStack 2
 
   tst.w   d0
   bne.s   FindNearestOpenSprite_Continue
 
-  move.w  #VDP_SPRITES + 4, d0
+  move.w  #VDP_SPRITES + 4, -(sp)
   jsr ReadVramWord
   PopStack 2
 
   tst.w  d0
   bne.s  FindNearestOpenSprite_Continue
 
-  move.w  #VDP_SPRITES + 6, d0
+  move.w  #VDP_SPRITES + 6, -(sp)
   jsr ReadVramWord
   PopStack 2
 

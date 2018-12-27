@@ -5,7 +5,7 @@
   include 'bootstrap/headers.asm'
   include 'bootstrap/init.asm'
 
-  jsr LoadTitlescreen
+  jmp LoadTitlescreen
 
 BusError:
   rte
