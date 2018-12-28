@@ -36,6 +36,20 @@ SPRITE_HFLIP=$0800
     addi.w  #VDP_SPRITES, d1  ; + VDP_SPRITES
   endm
 
+  macro VdpSetSpritePositionX
+    move.w  \2, -(sp)
+    move.w  \1, -(sp)
+    jsr SetSpritePositionX
+    PopStack 4
+  endm
+
+  macro VdpSetSpritePositionY
+    move.w  \2, -(sp)
+    move.w  \1, -(sp)
+    jsr SetSpritePositionY
+    PopStack 4
+  endm
+
 ; xx xx - Location of sprite, x
 ; yy yy - Location of sprite, y
 ; 00 hv - Horizontal and vertical size

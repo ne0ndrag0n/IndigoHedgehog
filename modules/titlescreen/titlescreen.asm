@@ -1,5 +1,6 @@
   ifnd H_TITLESCREEN
 H_TITLESCREEN = 1
+  include 'modules/inputmanager/mod.asm'
 
 LoadTitlescreen:
   VdpLoadPaletteDma #VDP_PAL_0, #VGAPalette
@@ -22,16 +23,13 @@ LoadTitlescreen:
   VdpDrawText #$1915, #String_Online
   VdpDrawText #$1917, #String_Settings
 
-  ;005D is the arrow thing in the font
-  ;VdpNewSprite  #0, #0, #0, #TS_BUTTON_LOCATION
-
   ;DebugPrintLabelHere
-  ;move.w  #0, -(sp)
-  ;move.w  #0, -(sp)
-  ;jsr SetSpriteSizeAttrib
-  ;PopStack 2
+
+  NewInputManager #TS_BUTTON_LOCATION
+  move.l  d0, -(sp)
 
 TitlescreenMain:
+  ;InputManagerUpdate (sp)
   bra.s TitlescreenMain
 
 ExitTitlescreen:

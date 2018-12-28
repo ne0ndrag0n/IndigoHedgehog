@@ -11,6 +11,18 @@ H_INPUT_MANAGER = 1
     move.l  d1, \2                  ; a1 = pointer to target struct
   endm
 
+  macro NewInputManager
+    move.w  \1, -(sp)
+    jsr InputManager_Create
+    PopStack 2
+  endm
+
+  macro InputManagerUpdate
+    move.l  \1, -(sp)
+    jsr InputManager_UpdateState
+    PopStack 4
+  endm
+
 ; InputManager target data structure:
 ; [ xx xx yy yy ww ww hh hh aa aa aa aa ]
 ; xx xx yy yy - Location on-screen of upper left corner
@@ -18,38 +30,76 @@ H_INPUT_MANAGER = 1
 ; aa aa aa aa - Callback: jsr'd when non-joypad button is pressed
 
 ; InputManager struct:
-; [ xx xx yy yy ww ww hh hh aa ll nn nn [ target, target, ... ] ]
-; 0 xx xx yy yy - Upper left corner of cursor
-; 4 ww ww hh hh - Width and height of cursor box
-; 8 i1 i2 i3 i4 - Sprite attribute table index of each corner, clockwise from left
-; 12 oo oo - Origin target, if interpolating, current target otherwise
-; 14 dd dd - Destination target, if interpolating
-; 16 00 ss - Interpolation step, 0 representing no active interpolation
-; 18 nn nn - Number of targets remaining (300 available)
+; ul ul - Corner sprite index
+; ur ur - Corner sprite index
+; lr lr - Corner sprite index
+; ll ll - Corner sprite index
+; oo oo - Origin target, if interpolating, current target otherwise
+; dd dd - Destination target, if interpolating
+; 00 ss - Interpolation step, 0 representing no active interpolation
+; nn nn - Number of targets remaining (300 available)
 
 IM_TARGETS = 300
 IM_TARGET_SIZE = 12
-IM_MEMBERS_SIZE = 20
 
+IM_UL_SPRITE = 0
+IM_UR_SPRITE = 2
+IM_LR_SPRITE = 4
+IM_LL_SPRITE = 6
+IM_ORIGIN = 8
+IM_DESTINATION = 10
+IM_STEP = 12
+IM_NUM_TARGETS = 14
+
+IM_MEMBERS_SIZE = IM_NUM_TARGETS + 2
+
+; aa ii - Tile attribute of the corner piece without (flip attributes)
 ; Returns: address of new InputManager
 InputManager_Create:
-  move.l  (sp), a1            ; Save the return address for after we're done preallocating
+  move.l  sp, fp              ; Create a frame pointer to track original top of stack
+                              ; Original top of stack should be return address + all arguments
 
-  move.l  sp, d0
-  subi.l  #( ( IM_TARGETS * IM_TARGET_SIZE ) + IM_MEMBERS_SIZE ), d0
-  move.l  d0, sp
+  PopStack 6                  ; Move the stack pointer down to the bottom
 
-  move.l  #0, (sp)             ; Set x and y coords of current cursor to 0
-  move.l  #0, 4(sp)            ; Set width and height of current cursor to 0
-  move.l  #0, 8(sp)            ; Set attribute and location of rotatable corner piece to 0
-  move.w  #0, 12(sp)           ; Origin target 0
-  move.w  #0, 14(sp)           ; Destination target 0
-  move.w  #0, 16(sp)           ; Inactive interpolation (0)
-  move.w  #IM_TARGETS, 18(sp)  ; 300 slots open for input manager targets
+  Allocate #( ( IM_TARGETS * IM_TARGET_SIZE ) + IM_MEMBERS_SIZE ), a0
 
-  move.l  sp, d0               ; d0 returns the address of the inputmanager
+  move.w  4(fp), -(sp)        ; Replace the attribute argument
+  move.l  (fp), -(sp)         ; Replace the return address
 
-  move.l  a1, -(sp)           ; Push return address back onto the stack
+  move.w  #-1, IM_UL_SPRITE(a0)
+  move.w  #-1, IM_UR_SPRITE(a0)
+  move.w  #-1, IM_LR_SPRITE(a0)
+  move.w  #-1, IM_LL_SPRITE(a0)
+  move.w  #-1, IM_ORIGIN(a0)
+  move.w  #-1, IM_DESTINATION(a0)
+  move.w  #0, IM_STEP(a0)
+  move.w  #IM_TARGETS, IM_NUM_TARGETS(a0) ; 300 slots open for input manager targets
+
+  move.w  4(fp), -(sp)
+  bsr.s   InputManager_SetupCursor
+  PopStack 2
+
+  move.l  a0, d0               ; d0 returns the address of the inputmanager
+  rts
+
+; a0 shall be address of inputmanager
+; aa ii - Tile attribute of the corner piece without (flip attributes)
+InputManager_SetupCursor:
+  move.l  sp, fp            ; Frame pointer is easier to work with
+
+  move.w  4(fp), d0         ; Remove flip bits - We're doing this ourselves.
+  andi.w  #$E7FF, d0
+  move.w  d0, 4(fp)
+
+  move.l  a0, -(sp)
+
+  VdpNewSprite  #0, #0, #( SPRITE_VERTICAL_SIZE_1 | SPRITE_HORIZONTAL_SIZE_1 ), 4(fp)
+
+  move.l  (sp)+, a0
+
+  move.w  d0, IM_UL_SPRITE(a0)
+
+  ; TODO: The other corner pieces
   rts
 
 ; aa aa aa aa - Address of the inputmanager
@@ -57,25 +107,20 @@ InputManager_Create:
 ; ww ww hh hh - Width and height
 ; cc cc cc cc - Callback
 InputManager_RegisterTarget:
-  move.l  4(sp), a0           ; a0 is going to be where much of the magic happens
+  move.l  4(sp), a0
 
-  move.w  18(a0), d0          ; Decrement available targets
+  move.w  #IM_TARGETS, d0                 ; Next target index is at IM_TARGETS - available_targets
+  sub.w   IM_NUM_TARGETS(a0), d0
+
+  MoveTargetPointer d0, a1
+
+  move.l  8(sp), (a1)
+  move.l  12(sp), 4(a1)
+  move.l  16(sp), 8(a1)
+
+  move.w  IM_NUM_TARGETS(a0), d0          ; Decrement available targets
   subi.w  #1, d0
-  move.w  d0, 18(a0)
-
-  ; IM_MEMBERS_SIZE + IM_TARGET_SIZE( IM_TARGETS - Remaining - 1 ) = Offset the new target is placed at
-  move.l  #0, d0              ; Store in d0
-  move.w  #IM_TARGETS, d0
-  sub.w   18(a0), d0
-  subi.w  #1, d0
-  mulu.w  #IM_TARGET_SIZE, d0
-  addi.w  #IM_MEMBERS_SIZE, d0
-
-  add.l   a0, d0              ; Address + offset (or offset + address)
-
-  move.l  8(sp), (a0)+        ; Write xx xx and yy yy
-  move.l  12(sp), (a0)+       ; Write ww ww and hh hh
-  move.l  16(sp), (a0)        ; Write callback
+  move.w  d0, IM_NUM_TARGETS(a0)
   rts
 
 ; a0 shall be address of inputmanager
@@ -87,58 +132,134 @@ InputManager_UpdateInterpolation:
   move.l  d2, -(sp)
 
   move.w  #100, d2                ; Invert proportion
-  sub.w   16(a0), d2
+  sub.w   IM_STEP(a0), d2
 
-  ; xx xx, yy yy - UL
-  ; xx xx + ww ww, yy yy - UR
-  ; xx xx, yy yy + hh hh - LL
-  ; xx xx + ww ww, yy yy + hh hh - LR
-  ; lerp uses origin target, destination target, proportion at 16(a0)
-  ; each target address is accessible with the formula:
-  ;     a0 + IM_MEMBERS_SIZE + (IM_TARGET_SIZE * target index)
+  MoveTargetPointer IM_ORIGIN(a0), a1
+  MoveTargetPointer IM_DESTINATION(a0), a2
 
-  MoveTargetPointer 12(a0), a1
-  MoveTargetPointer 14(a0), a2
-
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
   MathLerp (a1), (a2), d2
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
 
-  move.w  d0, (a0)                ; Write new xx xx position to inputmanager
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionX IM_UL_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
 
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
   MathLerp 2(a1), 2(a2), d2
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
 
-  move.w  d0, 2(a0)               ; Write new yy yy position to inputmanager
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionY IM_UL_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
 
   ; TODO: For now and for testing, we're only going to do the top left corner
   ; TODO: But here will go calculations for new widths and heights, etc
 
-  move.w  16(a0), d0              ; Decrement percent remaining
+  move.w  IM_STEP(a0), d0              ; Decrement percent remaining
   subi.w  #1, d0
-  move.w  d0, 16(a0)
+  move.w  d0, IM_STEP(a0)
 
   move.l  (sp)+, d2
   move.l  (sp)+, a2
+  rts
+
+; a0 shall be address of inputmanager
+; 00 ss - Status (in JOYPAD_* direction)
+InputManager_FindNearestInDirection:
+  ; TODO: This is the fun one. Set up a parallel IM_NUM_TARGETS bucket to match up to IM_NUM_TARGETS - 1 items in a given direction.
+  ; Then, use the math library to determine the closest item. This item will be set as IM_DESTINATION, and IM_STEP shall be set to 100.
   rts
 
 ; aa aa aa aa - Address of the inputmanager
 InputManager_UpdateState:
   move.l  4(sp), a0           ; Load SELF pointer
 
-  move.w  18(a0), d0          ; Nothing to do if there are no targets
+  move.w  IM_NUM_TARGETS(a0), d0          ; Nothing to do if there are no targets
   cmp.w   #IM_TARGETS, d0
   bne.s   InputManager_UpdateState_CheckInterpolation
-  rts
+
+  bra.w   InputManager_UpdateState_End
 
 InputManager_UpdateState_CheckInterpolation:
-  move.w  16(a0), d0
+  move.w  IM_STEP(a0), d0
   tst.w   d0
   beq.s   InputManager_UpdateState_CheckInputs    ; If interpolation step is 0 then nothing needs to be done
 
   bsr.w   InputManager_UpdateInterpolation        ; Otherwise, call the function which updates sprite position on screen
-  rts
+
+  bra.w   InputManager_UpdateState_End
 
 InputManager_UpdateState_CheckInputs:
-  ; TODO: Check for a,b,c,start where the item currently is
-  ; TODO: Check for dpad motion, find the items in that direction, and set destination for next go-around
+  move.w  #0, d0                                 ; Check for a,b,c,start where the item currently is
+  move.b  JOYPAD_STATE_1, d0
+
+  move.b  d0, d1                                 ; x OR y, if x contains y, equals x
+  ori.b   #JOYPAD_A, d1
+  cmp.b   d0, d1
+  beq.s   InputManager_UpdateState_ButtonPressed
+
+  move.b  d0, d1
+  ori.b   #JOYPAD_B, d1
+  cmp.b   d0, d1
+  beq.s   InputManager_UpdateState_ButtonPressed
+
+  move.b  d0, d1
+  ori.b   #JOYPAD_C, d1
+  cmp.b   d0, d1
+  beq.s   InputManager_UpdateState_ButtonPressed
+
+  move.b  d0, d1
+  ori.b   #JOYPAD_START, d1
+  cmp.b   d0, d1
+  beq.s   InputManager_UpdateState_ButtonPressed
+
+InputManager_UpdateState_CheckDPad:
+  move.b  d0, d1                            ; Check for dpad motion, find the items in that direction, and set destination for next go-around
+  ori.b   #JOYPAD_UP, d1
+  cmp.b   d0, d1
+  beq.s   InputManager_UpdateState_PrepareCall
+
+  move.b  d0, d1
+  ori.b   #JOYPAD_DOWN, d1
+  cmp.b   d0, d1
+  beq.s   InputManager_UpdateState_PrepareCall
+
+  move.b  d0, d1
+  ori.b   #JOYPAD_LEFT, d1
+  cmp.b   d0, d1
+  beq.s   InputManager_UpdateState_PrepareCall
+
+  move.b  d0, d1
+  ori.b   #JOYPAD_RIGHT, d1
+  cmp.b   d0, d1
+  beq.s   InputManager_UpdateState_PrepareCall
+
+  bra.s   InputManager_UpdateState_End          ; If we make it here, no relevant buttons were pressed
+
+InputManager_UpdateState_PrepareCall:
+  move.w  d0, -(sp)
+  bsr.w   InputManager_FindNearestInDirection
+  PopStack 2
+
+  bra.s   InputManager_UpdateState_End
+
+InputManager_UpdateState_ButtonPressed:
+  MoveTargetPointer IM_ORIGIN(a0), a1       ; Get pointer to the item in the target array
+
+  move.w   d0, -(sp)                        ; Push button states
+  jsr      8(a1)                            ; Call the callback!
+  PopStack 2
+
+InputManager_UpdateState_End:
   rts
 
   endif
