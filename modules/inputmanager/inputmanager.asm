@@ -39,6 +39,12 @@ H_INPUT_MANAGER = 1
 ; 00 ss - Interpolation step, 0 representing no active interpolation
 ; nn nn - Number of targets remaining (300 available)
 
+TARGET_LOCATION_X = 0
+TARGET_LOCATION_Y = 2
+TARGET_WIDTH = 4
+TARGET_HEIGHT = 6
+TARGET_CALLBACK = 8
+
 IM_TARGETS = 300
 IM_TARGET_SIZE = 12
 
@@ -174,9 +180,96 @@ InputManager_UpdateInterpolation:
 
 ; a0 shall be address of inputmanager
 ; 00 ss - Status (in JOYPAD_* direction)
+; Returns: -1 if none in this direction, index of closest target otherwise.
 InputManager_FindNearestInDirection:
   ; TODO: This is the fun one. Set up a parallel IM_NUM_TARGETS bucket to match up to IM_NUM_TARGETS - 1 items in a given direction.
   ; Then, use the math library to determine the closest item. This item will be set as IM_DESTINATION, and IM_STEP shall be set to 100.
+  move.l  sp, fp                                    ; Frame pointer is easier to work with
+
+  move.w  #IM_TARGETS, d0                           ; Targets - num_targets = Items in list
+  sub.w   IM_NUM_TARGETS(a0), d0                    ; As num_targets is actually the number of remaining items
+  tst.w   d0
+  beq.w   InputManager_FindNearestInDirection_ReturnNone
+
+  move.w  d0, -(sp)                                 ; Contains the number of registered items
+                                                    ; -2(fp) - tt tt rr rr rr rr 00 ss
+                                                    ;          ^sp   ^fp
+
+  move.w  #0, -(sp)                                 ; Contains the number of found items
+                                                    ; -4(fp)
+
+
+  move.l  a2, -(sp)                                 ; Save a2
+
+  lsl.w   #1, d0                                    ; *2, Each index is word size
+  Allocate d0, a1                                   ; (a1) - Top of the candidates list
+
+  move.w  4(fp), d0                                 ; Start figuring out what direction was pressed
+
+  move.b  d0, d1
+  ori.b   #JOYPAD_UP, d1
+  beq.s   InputManager_FindNearestInDirection_Up
+
+  move.b  d0, d1
+  ori.b   #JOYPAD_DOWN, d1
+  beq.s   InputManager_FindNearestInDirection_Down
+
+  move.b  d0, d1
+  ori.b   #JOYPAD_LEFT, d1
+  beq.s   InputManager_FindNearestInDirection_Left
+
+  move.b  d0, d1                                      ; It's damn well gonna be one of these four!
+  ori.b   #JOYPAD_RIGHT, d1
+  beq.s   InputManager_FindNearestInDirection_Right
+
+InputManager_FindNearestInDirection_Up:
+  move.l  #InputManager_FindNearestInDirection_FindUp, -(sp)
+  bra.s   InputManager_FindNearestInDirection_BeginSearch
+
+InputManager_FindNearestInDirection_Down:
+  move.l  #InputManager_FindNearestInDirection_FindDown, -(sp)
+  bra.s   InputManager_FindNearestInDirection_BeginSearch
+
+InputManager_FindNearestInDirection_Left:
+  move.l  #InputManager_FindNearestInDirection_FindLeft, -(sp)
+  bra.s   InputManager_FindNearestInDirection_BeginSearch
+
+InputManager_FindNearestInDirection_Right:
+  move.l  #InputManager_FindNearestInDirection_FindRight, -(sp)
+  bra.s   InputManager_FindNearestInDirection_BeginSearch
+
+InputManager_FindNearestInDirection_FindUp:     ; d1 has y < origin
+  nop
+
+InputManager_FindNearestInDirection_FindDown:   ; d1 has y > origin
+  nop
+
+InputManager_FindNearestInDirection_FindLeft:   ; d1 has x < origin
+  nop
+
+InputManager_FindNearestInDirection_FindRight:  ; d1 has x > origin
+  nop
+
+; TODO
+InputManager_FindNearestInDirection_BeginSearch:
+  move.w  #0, d0                ; d0 is current index
+
+InputManager_FindNearestInDirection_SearchLoop:
+  MoveTargetPointer d0, a2      ; a2 contains needle we're comparing to
+  ; TODO
+  jsr (sp)                      ; Top of stack should contain selected routine
+  nop
+
+  PopStack 4                    ; Get rid of the comparator
+  move.l  (sp)+, a2             ; Restore a2, we're done with it
+  move.w  -2(fp), d0            ; Deallocate that huge array
+  lsl.w   #1, d0
+  Deallocate d0
+  PopStack 4                    ; Then deallocate the two items we allocated before that
+  rts
+
+InputManager_FindNearestInDirection_ReturnNone:
+  move.w  #-1, d0
   rts
 
 ; aa aa aa aa - Address of the inputmanager

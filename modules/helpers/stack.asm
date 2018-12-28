@@ -9,7 +9,7 @@ H_HELPERS_STACK = 1
 
  macro Allocate
   move.l  sp, d1      ; Allocate n bytes for object
-  subi.l  \1, d1
+  sub.l   \1, d1
   move.l  d1, sp
 
   move.l  sp, \2      ; Return this as "self"
@@ -17,7 +17,7 @@ H_HELPERS_STACK = 1
 
  macro Deallocate
   move.l  sp, d1
-  addi.l  \1, d1
+  add.l   \1, d1
   move.l  d1, sp
  endm
 
