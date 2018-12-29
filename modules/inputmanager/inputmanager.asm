@@ -191,15 +191,21 @@ InputManager_FindNearestInDirection:
   tst.w   d0
   beq.w   InputManager_FindNearestInDirection_ReturnNone
 
-  move.w  d0, -(sp)                                 ; Contains the number of registered items
+  move.w  d0, -(sp)                                 ; Contains the number of registered items in a0
                                                     ; -2(fp) - tt tt rr rr rr rr 00 ss
                                                     ;          ^sp   ^fp
 
   move.w  #0, -(sp)                                 ; Contains the number of found items
                                                     ; -4(fp)
 
+  move.w  #0, -(sp)                                 ; Contains the current closest target index
+                                                    ; -6(fp)
+
+  move.w  #0, -(sp)                                 ; Contains the current index while we're searching for the nearest item
+                                                    ; -8(fp)
 
   move.l  a2, -(sp)                                 ; Save a2
+  move.l  a3, -(sp)                                 ; Save a3
 
   lsl.w   #1, d0                                    ; *2, Each index is word size
   Allocate d0, a1                                   ; (a1) - Top of the candidates list
@@ -238,29 +244,105 @@ InputManager_FindNearestInDirection_Right:
   move.l  #InputManager_FindNearestInDirection_FindRight, -(sp)
   bra.s   InputManager_FindNearestInDirection_BeginSearch
 
-InputManager_FindNearestInDirection_FindUp:     ; d1 has y < origin
-  nop
+InputManager_FindNearestInDirection_FindUp:
+  move.w  TARGET_LOCATION_Y(a3), d1
+  cmp.w   TARGET_LOCATION_Y(a2), d1       ; origin < value
+  blt.s   InputManager_FindNearestInDirection_AddItem
+  rts
 
-InputManager_FindNearestInDirection_FindDown:   ; d1 has y > origin
-  nop
+InputManager_FindNearestInDirection_FindDown:
+  move.w  TARGET_LOCATION_Y(a3), d1
+  cmp.w   TARGET_LOCATION_Y(a2), d1       ; origin > value
+  bgt.s   InputManager_FindNearestInDirection_AddItem
+  rts
 
-InputManager_FindNearestInDirection_FindLeft:   ; d1 has x < origin
-  nop
+InputManager_FindNearestInDirection_FindLeft:
+  move.w  TARGET_LOCATION_X(a3), d1
+  cmp.w   TARGET_LOCATION_X(a2), d1       ; origin < value
+  blt.s   InputManager_FindNearestInDirection_AddItem
+  rts
 
-InputManager_FindNearestInDirection_FindRight:  ; d1 has x > origin
-  nop
+InputManager_FindNearestInDirection_FindRight:
+  move.w  TARGET_LOCATION_X(a3), d1
+  cmp.w   TARGET_LOCATION_X(a2), d1       ; origin > value
+  bgt.s   InputManager_FindNearestInDirection_AddItem
+  rts
 
-; TODO
+InputManager_FindNearestInDirection_AddItem:
+  move.l  a1, -(sp)        ; Save the original pointer to array of matching indices
+
+  move.l  #0, d1           ; Increment a1 to where we need to put the new item
+  move.w  -4(fp), d1
+  mulu.w  #12, d1
+  add.l   a1, d1
+  move.l  d1, a1
+
+  move.w  d0, (a1)          ; Write to the array of matching indices
+
+  move.l  (sp)+, a1         ; Restore pointer to array of matching indices
+
+  move.w  -4(fp), d1        ; Increment number of found items
+  addi.w  #1, d1
+  move.w  d1, -4(fp)
+  rts
+
 InputManager_FindNearestInDirection_BeginSearch:
-  move.w  #0, d0                ; d0 is current index
+  move.w  #0, d0                        ; d0 is current index
+  MoveTargetPointer IM_ORIGIN(a0), a2   ; Store the needle pointer
 
 InputManager_FindNearestInDirection_SearchLoop:
-  MoveTargetPointer d0, a2      ; a2 contains needle we're comparing to
-  ; TODO
-  jsr (sp)                      ; Top of stack should contain selected routine
-  nop
+  cmp.w   -2(fp), d0            ; Break if we exceed the number of registered items
+  blt.s   InputManager_FindNearestInDirection_GetShortestDistance
 
+  MoveTargetPointer d0, a3      ; Store the value to compare to the needle
+  jsr (sp)                      ; Top of stack should contain selected routine
+
+  addi.w  #1, d0
+  bra.s InputManager_FindNearestInDirection_SearchLoop
+
+InputManager_FindNearestInDirection_GetShortestDistance:
   PopStack 4                    ; Get rid of the comparator
+
+InputManager_FindNearestInDirection_ShortestDistanceLoop:
+  tst.w   -4(fp)                ; Break if we exceed the number of found items
+  beq.s   InputManager_FindNearestInDirection_ReturnValue
+
+  move.l  a0, -(sp)             ; Save these registers as they can be potentially overwritten
+  move.l  a1, -(sp)
+
+  ; Compare current index -8(fp) to last lowest -6(fp).
+  ; for item in list
+  ;   if item< last_lowest (needle) then last_lowest = item
+  MoveTargetPointer -6(fp), a2  ; Needle (last lowest)
+  MoveTargetPointer -8(fp), a3  ; Value
+
+  MathCompareDistance TARGET_LOCATION_X(a2), TARGET_LOCATION_X(a3), TARGET_LOCATION_Y(a2), TARGET_LOCATION_Y(a3)
+
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  cmp.b   #-1, d0
+  bne.s   InputManager_FindNearestInDirection_ShortestDistanceLoop_Continue
+
+  move.w  -8(fp), -6(fp)        ; Move current index position to last lowest position
+
+InputManager_FindNearestInDirection_ShortestDistanceLoop_Continue:
+  move.w  -4(fp), d1            ; Decrement remaining items to explore
+  subi.w  #1, d1
+  move.w  d1, -4(fp)
+
+  move.w  -8(fp), d1            ; Increment current index position
+  addi.w  #1, d1
+  move.w  d1, -8(fp)
+
+  move.l a1, d1                 ; Increment a1 to the next position in the array
+  addi.l #12, d1
+  move.l d1, a1
+
+  bra.s InputManager_FindNearestInDirection_ShortestDistanceLoop
+
+InputManager_FindNearestInDirection_ReturnValue:
+  move.l  (sp)+, a3             ; Restore a3, we're done with it
   move.l  (sp)+, a2             ; Restore a2, we're done with it
   move.w  -2(fp), d0            ; Deallocate that huge array
   lsl.w   #1, d0
