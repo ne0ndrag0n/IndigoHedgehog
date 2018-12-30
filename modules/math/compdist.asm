@@ -42,7 +42,7 @@ CompareDistance:
 
   move.w  (sp)+, d1      ; d1 = x1^2 + y1^2
 
-  cmp.w   d1, d0
+  cmp.w   d0, d1
 
   blt.w   CompareDistance_IsLT ; It's sure as shit gonna be one of these three
   beq.w   CompareDistance_IsEQ

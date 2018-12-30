@@ -23,16 +23,32 @@ LoadTitlescreen:
   VdpDrawText #$1915, #String_Online
   VdpDrawText #$1917, #String_Settings
 
-  ;DebugPrintLabelHere
-
   NewInputManager #TS_BUTTON_LOCATION
   move.l  d0, -(sp)
 
+  move.l  (sp), a0
+  InputManagerRegister a0, #$C8, #$88, #$38, #$08, #Selected1PGame
+  move.l  (sp), a0
+  InputManagerRegister a0, #$C8, #$98, #$38, #$08, #Selected2PGame
+
 TitlescreenMain:
-  ;InputManagerUpdate (sp)
+  InputManagerUpdate (sp)
   bra.s TitlescreenMain
 
+Selected1PGame:
+  rts
+
+Selected2PGame:
+  rts
+
+SelectedNetplay:
+  rts
+
+SelectedSettings:
+  rts
+
 ExitTitlescreen:
+  PopStack 4
   bra.s ExitTitlescreen
 
   endif
