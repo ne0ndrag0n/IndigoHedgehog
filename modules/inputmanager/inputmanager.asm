@@ -337,6 +337,12 @@ InputManager_FindNearestInDirection_SearchLoop:
   bra.s InputManager_FindNearestInDirection_SearchLoop
 
 InputManager_FindNearestInDirection_ShortestDistanceLoopPrepare:
+  tst.w   -4(fp)                        ; If no items were found, -4(fp) being 0, move -1 into -6(fp)
+  bne.s   InputManager_FindNearestInDirection_ShortestDistanceLoopPrepareContinue
+  move.w  #-1, -6(fp)
+  bra.s   InputManager_FindNearestInDirection_ReturnValue
+
+InputManager_FindNearestInDirection_ShortestDistanceLoopPrepareContinue:
   MoveTargetPointer IM_ORIGIN(a0), a2   ; The needle will be the origin pointer
 
 InputManager_FindNearestInDirection_ShortestDistanceLoop:
@@ -378,7 +384,7 @@ InputManager_FindNearestInDirection_ReturnValue:
   move.l  (sp)+, a4             ; Restore a4, we're done with it
   move.l  (sp)+, a3             ; Restore a3, we're done with it
   move.l  (sp)+, a2             ; Restore a2, we're done with it
-  move.w  -6(fp), d0            ; The return value is the last lowest position
+  move.w  -6(fp), d0            ; The return value is the last lowest position (or -1)
   PopStack 6                    ; Pop all local variables
   rts
 
