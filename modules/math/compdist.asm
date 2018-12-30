@@ -14,7 +14,7 @@ H_MATH_COMPDIST = 1
 ; x2 x2
 ; y1 y1
 ; x1 x1
-; Returns: -1 if x1, y1 < x2, y2...0 if equal....1 if x1, y1 > x2, y2
+; Returns: 1 if x1, y1 > x2, y2, 0 otherwise
 CompareDistance:
   SetupFramePointer
 
@@ -43,17 +43,8 @@ CompareDistance:
   move.w  (sp)+, d1      ; d1 = x1^2 + y1^2
 
   cmp.w   d0, d1
-
-  blt.w   CompareDistance_IsLT ; It's sure as shit gonna be one of these three
-  beq.w   CompareDistance_IsEQ
   bgt.w   CompareDistance_IsGT
 
-CompareDistance_IsLT:
-  RestoreFramePointer
-  move.b  #-1, d0
-  rts
-
-CompareDistance_IsEQ:
   RestoreFramePointer
   move.b  #0, d0
   rts

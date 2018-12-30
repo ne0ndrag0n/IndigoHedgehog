@@ -157,9 +157,6 @@ InputManager_RegisterTarget:
   rts
 
 ; a0 shall be address of inputmanager
-; d2 d2 d2 d2
-; a2 a2 a2 a2
-; rr rr rr rr
 InputManager_UpdateInterpolation:
   move.l  a2, -(sp)
   move.l  d2, -(sp)
@@ -172,7 +169,7 @@ InputManager_UpdateInterpolation:
 
   move.l  a0, -(sp)
   move.l  a1, -(sp)
-  MathLerp (a1), (a2), d2
+  MathLerp TARGET_LOCATION_X(a2), TARGET_LOCATION_X(a1), d2
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
@@ -184,7 +181,7 @@ InputManager_UpdateInterpolation:
 
   move.l  a0, -(sp)
   move.l  a1, -(sp)
-  MathLerp 2(a1), 2(a2), d2
+  MathLerp TARGET_LOCATION_Y(a2), TARGET_LOCATION_Y(a1), d2
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
@@ -201,6 +198,12 @@ InputManager_UpdateInterpolation:
   subi.w  #1, d0
   move.w  d0, IM_STEP(a0)
 
+  tst.w   d0                           ; If percent remaining is 0, set origin to destination
+  bne.s   InputManager_UpdateInterpolation_Exit
+
+  move.w  IM_DESTINATION(a0), IM_ORIGIN(a0)
+
+InputManager_UpdateInterpolation_Exit:
   move.l  (sp)+, d2
   move.l  (sp)+, a2
   rts
@@ -325,7 +328,7 @@ InputManager_FindNearestInDirection_BeginSearch:
 InputManager_FindNearestInDirection_SearchLoop:
   cmp.w   -2(fp), d0            ; Break if counter exceeds the number of registered items
                                 ; Branch if d0 equals -2(fp)
-  beq.s   InputManager_FindNearestInDirection_ShortestDistanceLoop
+  beq.s   InputManager_FindNearestInDirection_ShortestDistanceLoopPrepare
 
   MoveTargetPointer d0, a3      ; Store the value to compare to the needle
   jsr (a4)                      ; Top of stack should contain selected routine
@@ -333,27 +336,26 @@ InputManager_FindNearestInDirection_SearchLoop:
   addi.w  #1, d0
   bra.s InputManager_FindNearestInDirection_SearchLoop
 
+InputManager_FindNearestInDirection_ShortestDistanceLoopPrepare:
+  MoveTargetPointer IM_ORIGIN(a0), a2   ; The needle will be the origin pointer
+
 InputManager_FindNearestInDirection_ShortestDistanceLoop:
   tst.w   -4(fp)                ; Break if we exceed the number of found items
   beq.s   InputManager_FindNearestInDirection_ReturnValue
 
   move.l  a0, -(sp)             ; Save these registers as they can be potentially overwritten
   move.l  a1, -(sp)
+  move.l  a2, -(sp)
 
-  ; Compare current index (a1) to last lowest -6(fp).
-  ; for item in list
-  ;   if item < last_lowest (needle) then last_lowest = item
-  MoveTargetPointer -6(fp), a2  ; Needle (last lowest)
   MoveTargetPointer (a1), a3    ; Value
 
-  DebugPrintLabelHere
-  ; TODO: This looks backward, verify a2 and a3 really are where they should be...
   MathCompareDistance TARGET_LOCATION_X(a2), TARGET_LOCATION_Y(a2), TARGET_LOCATION_X(a3), TARGET_LOCATION_Y(a3)
 
+  move.l  (sp)+, a2
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
-  cmp.b   #-1, d0               ; value is x1, needle (last lowest) is x2. x1 must be lower than x2 for this to apply
+  tst.b   d0                    ; MathCompareDistance returns 0 if (x1, y1) < (x2, y2)
   bne.s   InputManager_FindNearestInDirection_ShortestDistanceLoop_Continue
 
   move.w  (a1), -6(fp)          ; Move current index position to last lowest position
