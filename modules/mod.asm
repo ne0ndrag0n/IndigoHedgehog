@@ -6,3 +6,4 @@
  include 'modules/titlescreen/mod.asm'
  include 'modules/inputmanager/mod.asm'
  include 'modules/math/mod.asm'
+ include 'modules/timer/mod.asm'

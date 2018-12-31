@@ -37,6 +37,7 @@ VBlank:
   move.b d0, $FF0000
 
   ; vblank stuff goes here
+  jsr UpdateTicks
   jsr JoypadVBlank
 
   move.b  $FF0000, d0         ; Unset status bit

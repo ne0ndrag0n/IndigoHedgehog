@@ -1,6 +1,7 @@
   ifnd H_INPUT_MANAGER
 H_INPUT_MANAGER = 1
   include 'modules/math/mod.asm'
+  include 'modules/timer/mod.asm'
 
   macro MoveTargetPointer
     move.l  #0, d1
