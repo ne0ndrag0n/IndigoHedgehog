@@ -232,6 +232,9 @@ InputManager_FindNearestInDirection:
   move.w  #0, -(sp)                                 ; Contains the current closest target index
                                                     ; -6(fp)
 
+  move.w  #32767, -(sp)                             ; Contains the last known difference measured between origin and potential destination
+                                                    ; -8(fp)
+
   move.l  a2, -(sp)                                 ; Save a2
   move.l  a3, -(sp)                                 ; Save a3
   move.l  a4, -(sp)                                 ; Save a4
@@ -358,16 +361,17 @@ InputManager_FindNearestInDirection_ShortestDistanceLoop:
 
   MoveTargetPointer (a1), a3    ; Value
 
-  MathCompareDistance TARGET_LOCATION_X(a2), TARGET_LOCATION_Y(a2), TARGET_LOCATION_X(a3), TARGET_LOCATION_Y(a3)
+  MathGetComparisonDistance TARGET_LOCATION_X(a2), TARGET_LOCATION_Y(a2), TARGET_LOCATION_X(a3), TARGET_LOCATION_Y(a3)
 
   move.l  (sp)+, a2
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
-  tst.b   d0                    ; MathCompareDistance returns 0 if (x1, y1) < (x2, y2)
-  bne.s   InputManager_FindNearestInDirection_ShortestDistanceLoop_Continue
+  cmp.w   -8(fp), d0            ; Did this value come up less than the last one we looked at?
+  bge.s   InputManager_FindNearestInDirection_ShortestDistanceLoop_Continue
 
-  move.w  (a1), -6(fp)          ; Move current index position to last lowest position
+  move.w  (a1), -6(fp)          ; If so, move current index position to last lowest position
+  move.w  d0, -8(fp)            ; And write that distance to last_known_distance -8(fp)
 
 InputManager_FindNearestInDirection_ShortestDistanceLoop_Continue:
   move.w  -4(fp), d1            ; Decrement remaining items to explore
@@ -388,7 +392,7 @@ InputManager_FindNearestInDirection_ReturnValue:
   move.l  (sp)+, a3             ; Restore a3, we're done with it
   move.l  (sp)+, a2             ; Restore a2, we're done with it
   move.w  -6(fp), d0            ; The return value is the last lowest position (or -1)
-  PopStack 6                    ; Pop all local variables
+  PopStack 8                    ; Pop all local variables
   rts
 
 InputManager_FindNearestInDirection_ReturnNone:

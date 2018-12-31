@@ -29,6 +29,10 @@ LoadTitlescreen:
   move.l  (sp), a0
   InputManagerRegister a0, #$C8, #$88, #$38, #$08, #Selected1PGame
   move.l  (sp), a0
+  InputManagerRegister a0, #$C8, #$98, #$38, #$08, #Selected2PGame
+  move.l  (sp), a0
+  InputManagerRegister a0, #$C8, #$A8, #$38, #$08, #SelectedNetplay
+  move.l  (sp), a0
   InputManagerRegister a0, #$C8, #$B8, #$38, #$08, #SelectedSettings
 
 TitlescreenMain:
