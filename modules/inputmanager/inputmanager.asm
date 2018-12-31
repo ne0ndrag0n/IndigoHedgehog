@@ -162,6 +162,8 @@ InputManager_UpdateInterpolation:
   move.l  a2, -(sp)
   move.l  d2, -(sp)
 
+  TimerHiResWaitTicks #30
+
   move.w  #100, d2                ; Invert proportion
   sub.w   IM_STEP(a0), d2
 
