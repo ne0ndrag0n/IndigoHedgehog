@@ -4,35 +4,12 @@ H_UI_PATTERNS = 1
 Button:
   dc.l	$00000000	;  Tile: 0
   dc.l	$00000000
-  dc.l	$00000000
-  dc.l	$000AAAAA
-  dc.l	$000AAAAA
-  dc.l	$000AA000
-  dc.l	$000AA000
-  dc.l	$000AA000
-  dc.l	$00000000	;  Tile: 1
-  dc.l	$00000000
-  dc.l	$00000000
-  dc.l	$AAAAAAAA
-  dc.l	$AAAAAAAA
-  dc.l	$00000000
-  dc.l	$00000000
-  dc.l	$00000000
-  dc.l	$000AA000	;  Tile: 3
-  dc.l	$000AA000
-  dc.l	$000AA000
-  dc.l	$000AA000
-  dc.l	$000AA000
-  dc.l	$000AA000
-  dc.l	$000AA000
-  dc.l	$000AA000
-  dc.l	$00000000	;  Tile: 2
-  dc.l	$00000000
-  dc.l	$00000000
-  dc.l	$AAAAA000
-  dc.l	$AAAAA000
-  dc.l	$000AA000
-  dc.l	$000AA000
-  dc.l	$000AA000
+  dc.l	$00333333
+  dc.l	$003BBBBB
+  dc.l	$003BBBBB
+  dc.l	$003BB333
+  dc.l	$003BB300
+  dc.l	$003BB300
+
 
   endif

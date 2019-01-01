@@ -103,21 +103,115 @@ InputManager_Create:
 ; a0 shall be address of inputmanager
 ; aa ii - Tile attribute of the corner piece without (flip attributes)
 InputManager_SetupCursor:
-  move.l  sp, fp            ; Frame pointer is easier to work with
+  SetupFramePointer
 
   move.w  4(fp), d0         ; Remove flip bits - We're doing this ourselves.
   andi.w  #$E7FF, d0
   move.w  d0, 4(fp)
 
+  ; Upper left
   move.l  a0, -(sp)
-
   VdpNewSprite  #0, #0, #( SPRITE_VERTICAL_SIZE_1 | SPRITE_HORIZONTAL_SIZE_1 ), 4(fp)
-
   move.l  (sp)+, a0
 
   move.w  d0, IM_UL_SPRITE(a0)
 
-  ; TODO: The other corner pieces
+  ; Upper right
+  move.w  4(fp), d0
+  ori.w   #SPRITE_HFLIP, d0
+  move.l  a0, -(sp)
+  VdpNewSprite #0, #0, #( SPRITE_VERTICAL_SIZE_1 | SPRITE_HORIZONTAL_SIZE_1 ), d0
+  move.l  (sp)+, a0
+
+  move.w  d0, IM_UR_SPRITE(a0)
+
+  ; Lower right
+  move.w  4(fp), d0
+  ori.w   #SPRITE_VFLIP, d0
+  ori.w   #SPRITE_HFLIP, d0
+  move.l  a0, -(sp)
+  VdpNewSprite #0, #0, #( SPRITE_VERTICAL_SIZE_1 | SPRITE_HORIZONTAL_SIZE_1 ), d0
+  move.l  (sp)+, a0
+
+  move.w  d0, IM_LR_SPRITE(a0)
+
+  ; Lower left
+  move.w  4(fp), d0
+  ori.w   #SPRITE_VFLIP, d0
+  move.l  a0, -(sp)
+  VdpNewSprite #0, #0, #( SPRITE_VERTICAL_SIZE_1 | SPRITE_HORIZONTAL_SIZE_1 ), d0
+  move.l  (sp)+, a0
+
+  move.w  d0, IM_LL_SPRITE(a0)
+
+  RestoreFramePointer
+  rts
+
+; aa aa aa aa - Address of the inputmanager
+InputManager_ResetCursor:
+  move.w  #0, IM_ORIGIN(a0)     ; Reset origin to item number 0
+
+  MoveTargetPointer #0, a1      ; Get target pointer of registered location 0
+
+  ; Upper left
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionX IM_UL_SPRITE(a0), TARGET_LOCATION_X(a1)
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionY IM_UL_SPRITE(a0), TARGET_LOCATION_Y(a1)
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  ; Upper right
+  move.w  TARGET_LOCATION_X(a1), d0
+  add.w   TARGET_WIDTH(a1), d0
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionX IM_UR_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionY IM_UR_SPRITE(a0), TARGET_LOCATION_Y(a1)
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  ; Lower right
+  move.w  TARGET_LOCATION_X(a1), d0
+  add.w   TARGET_WIDTH(a1), d0
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionX IM_LR_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.w  TARGET_LOCATION_Y(a1), d0
+  add.w   TARGET_HEIGHT(a1), d0
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionY IM_LR_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  ; Lower left
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionX IM_LL_SPRITE(a0), TARGET_LOCATION_X(a1)
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.w  TARGET_LOCATION_Y(a1), d0
+  add.w   TARGET_HEIGHT(a1), d0
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionY IM_LL_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
   rts
 
 ; aa aa aa aa - Address of the inputmanager
@@ -140,21 +234,9 @@ InputManager_RegisterTarget:
   subi.w  #1, d0
   move.w  d0, IM_NUM_TARGETS(a0)
 
-  move.w  #0, IM_ORIGIN(a0)               ; Reset origin to item number 0
-
-  MoveTargetPointer #0, a1                ; Get target pointer of location 0
-
   move.l  a0, -(sp)
-  move.l  a1, -(sp)
-  VdpSetSpritePositionX IM_UL_SPRITE(a0), TARGET_LOCATION_X(a1)
-  move.l  (sp)+, a1
-  move.l  (sp)+, a0
-
-  move.l  a0, -(sp)
-  move.l  a1, -(sp)
-  VdpSetSpritePositionY IM_UL_SPRITE(a0), TARGET_LOCATION_Y(a1)
-  move.l  (sp)+, a1
-  move.l  (sp)+, a0
+  jsr InputManager_ResetCursor
+  PopStack 4
   rts
 
 ; a0 shall be address of inputmanager
@@ -162,14 +244,13 @@ InputManager_UpdateInterpolation:
   move.l  a2, -(sp)
   move.l  d2, -(sp)
 
-  TimerHiResWaitTicks #30
-
   move.w  #100, d2                ; Invert proportion
   sub.w   IM_STEP(a0), d2
 
   MoveTargetPointer IM_ORIGIN(a0), a1
   MoveTargetPointer IM_DESTINATION(a0), a2
 
+  ; Upper left
   move.l  a0, -(sp)
   move.l  a1, -(sp)
   MathLerp TARGET_LOCATION_X(a2), TARGET_LOCATION_X(a1), d2
@@ -194,8 +275,100 @@ InputManager_UpdateInterpolation:
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
-  ; TODO: For now and for testing, we're only going to do the top left corner
-  ; TODO: But here will go calculations for new widths and heights, etc
+  ; Upper right
+  move.w  TARGET_LOCATION_X(a2), d0
+  add.w   TARGET_WIDTH(a2), d0
+  move.w  TARGET_LOCATION_X(a1), d1
+  add.w   TARGET_WIDTH(a1), d1
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  MathLerp d0, d1, d2
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionX IM_UR_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  MathLerp TARGET_LOCATION_Y(a2), TARGET_LOCATION_Y(a1), d2
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionY IM_UR_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  ; Lower right
+  move.w  TARGET_LOCATION_X(a2), d0
+  add.w   TARGET_WIDTH(a2), d0
+  move.w  TARGET_LOCATION_X(a1), d1
+  add.w   TARGET_WIDTH(a1), d1
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  MathLerp d0, d1, d2
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionX IM_LR_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.w  TARGET_LOCATION_Y(a2), d0
+  add.w   TARGET_HEIGHT(a2), d0
+  move.w  TARGET_LOCATION_Y(a1), d1
+  add.w   TARGET_HEIGHT(a1), d1
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  MathLerp d0, d1, d2
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionY IM_LR_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  ; Lower left
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  MathLerp TARGET_LOCATION_X(a2), TARGET_LOCATION_X(a1), d2
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionX IM_UL_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.w  TARGET_LOCATION_Y(a2), d0
+  add.w   TARGET_HEIGHT(a2), d0
+  move.w  TARGET_LOCATION_Y(a1), d1
+  add.w   TARGET_HEIGHT(a1), d1
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  MathLerp d0, d1, d2
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
+
+  move.l  a0, -(sp)
+  move.l  a1, -(sp)
+  VdpSetSpritePositionY IM_LL_SPRITE(a0), d0
+  move.l  (sp)+, a1
+  move.l  (sp)+, a0
 
   move.w  IM_STEP(a0), d0              ; Decrement percent remaining
   subi.w  #1, d0
@@ -217,6 +390,7 @@ InputManager_UpdateInterpolation_Exit:
 InputManager_FindNearestInDirection:
   move.l  sp, fp                                    ; Frame pointer is easier to work with
 
+  move.l  #0, d0
   move.w  #IM_TARGETS, d0                           ; Targets - num_targets = Items in list
   sub.w   IM_NUM_TARGETS(a0), d0                    ; As num_targets is actually the number of remaining items
   tst.w   d0

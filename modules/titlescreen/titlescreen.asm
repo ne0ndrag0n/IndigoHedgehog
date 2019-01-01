@@ -12,7 +12,7 @@ LoadTitlescreen:
   VdpLoadPatternDma #TS_BREAD_LOCATION,   #30,   #BreadPattern
   VdpLoadPatternDma #TS_SPACE_LOCATION,   #1120, #SpacePattern
   VdpLoadPatternDma #TS_LOGO_LOCATION,    #36,   #LogoPattern
-  VdpLoadPatternDma #TS_BUTTON_LOCATION,  #3,    #Button
+  VdpLoadPatternDma #TS_BUTTON_LOCATION,  #1,    #Button
 
   VdpBlitPattern #$0000, #$281C, #TS_SPACE_LOCATION, #VDP_PLANE_B, #$0040 ; Draw the background
   VdpBlitPattern #$0305, #$0C03, #TS_LOGO_LOCATION,  #VDP_PLANE_A, #$0060 ; Draw the logo
@@ -27,13 +27,13 @@ LoadTitlescreen:
   move.l  d0, -(sp)
 
   move.l  (sp), a0
-  InputManagerRegister a0, #$C8, #$88, #$38, #$08, #Selected1PGame
+  InputManagerRegister a0, #$C3, #$83, #$3B, #$0B, #Selected1PGame
   move.l  (sp), a0
-  InputManagerRegister a0, #$C8, #$98, #$38, #$08, #Selected2PGame
+  InputManagerRegister a0, #$C3, #$93, #$63, #$0B, #Selected2PGame
   move.l  (sp), a0
-  InputManagerRegister a0, #$C8, #$A8, #$38, #$08, #SelectedNetplay
+  InputManagerRegister a0, #$C3, #$A3, #$63, #$0B, #SelectedNetplay
   move.l  (sp), a0
-  InputManagerRegister a0, #$C8, #$B8, #$38, #$08, #SelectedSettings
+  InputManagerRegister a0, #$C3, #$B3, #$43, #$0B, #SelectedSettings
 
 TitlescreenMain:
   InputManagerUpdate (sp)
