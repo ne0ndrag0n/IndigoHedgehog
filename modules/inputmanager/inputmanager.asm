@@ -257,6 +257,8 @@ InputManager_UpdateInterpolation:
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
+  addi.w  #1, d0          ; Hack
+
   move.l  a0, -(sp)
   move.l  a1, -(sp)
   VdpSetSpritePositionX IM_UL_SPRITE(a0), d0
@@ -268,6 +270,8 @@ InputManager_UpdateInterpolation:
   MathLerp TARGET_LOCATION_Y(a2), TARGET_LOCATION_Y(a1), d2
   move.l  (sp)+, a1
   move.l  (sp)+, a0
+
+  addi.w  #1, d0          ; Hack
 
   move.l  a0, -(sp)
   move.l  a1, -(sp)
@@ -287,6 +291,8 @@ InputManager_UpdateInterpolation:
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
+  addi.w  #1, d0          ; Hack
+
   move.l  a0, -(sp)
   move.l  a1, -(sp)
   VdpSetSpritePositionX IM_UR_SPRITE(a0), d0
@@ -298,6 +304,8 @@ InputManager_UpdateInterpolation:
   MathLerp TARGET_LOCATION_Y(a2), TARGET_LOCATION_Y(a1), d2
   move.l  (sp)+, a1
   move.l  (sp)+, a0
+
+  addi.w  #1, d0          ; Hack
 
   move.l  a0, -(sp)
   move.l  a1, -(sp)
@@ -317,6 +325,8 @@ InputManager_UpdateInterpolation:
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
+  addi.w  #1, d0          ; Hack
+
   move.l  a0, -(sp)
   move.l  a1, -(sp)
   VdpSetSpritePositionX IM_LR_SPRITE(a0), d0
@@ -334,6 +344,8 @@ InputManager_UpdateInterpolation:
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
+  addi.w  #1, d0          ; Hack
+
   move.l  a0, -(sp)
   move.l  a1, -(sp)
   VdpSetSpritePositionY IM_LR_SPRITE(a0), d0
@@ -346,6 +358,8 @@ InputManager_UpdateInterpolation:
   MathLerp TARGET_LOCATION_X(a2), TARGET_LOCATION_X(a1), d2
   move.l  (sp)+, a1
   move.l  (sp)+, a0
+
+  addi.w  #1, d0          ; Hack
 
   move.l  a0, -(sp)
   move.l  a1, -(sp)
@@ -363,6 +377,8 @@ InputManager_UpdateInterpolation:
   MathLerp d0, d1, d2
   move.l  (sp)+, a1
   move.l  (sp)+, a0
+
+  addi.w  #1, d0          ; Hack
 
   move.l  a0, -(sp)
   move.l  a1, -(sp)
