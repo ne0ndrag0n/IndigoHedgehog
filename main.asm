@@ -48,11 +48,12 @@ EndVBlank:
   ContextRestore
   rte
 
+  include 'lib/echo.asm'
   include 'modules/mod.asm'
   include 'data/mod.asm'
   include 'constants/en_US.asm'
 
 RomEnd:
-  ORG $00010000
+  ORG $00020000
   dc.b %11111111
   end 0

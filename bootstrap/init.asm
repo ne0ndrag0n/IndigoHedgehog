@@ -50,4 +50,8 @@ ClearRAMLoop:
 	move.w	#$0000, (a0)+
 	dbf			d1, ClearRAMLoop
 
+InitEcho:
+  lea     SndPointerList, a0
+  bsr.w   Echo_Init
+
 	EnableInterrupts
