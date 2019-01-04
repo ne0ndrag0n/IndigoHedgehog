@@ -18,6 +18,10 @@ H_INPUT_MANAGER = 1
     PopStack 2
   endm
 
+  macro DeleteInputManager
+    jsr InputManager_Destroy
+  endm
+
   macro InputManagerUpdate
     move.l  \1, -(sp)
     jsr InputManager_UpdateState
@@ -98,6 +102,13 @@ InputManager_Create:
   PopStack 2
 
   move.l  a0, d0               ; d0 returns the address of the inputmanager
+  rts
+
+; sp shall be address of the inputmanager
+InputManager_Destroy:
+  move.l  (sp)+, a0
+  Deallocate #( ( IM_TARGETS * IM_TARGET_SIZE ) + IM_MEMBERS_SIZE )
+  move.l  a0, -(sp)
   rts
 
 ; a0 shall be address of inputmanager
@@ -363,7 +374,7 @@ InputManager_UpdateInterpolation:
 
   move.l  a0, -(sp)
   move.l  a1, -(sp)
-  VdpSetSpritePositionX IM_UL_SPRITE(a0), d0
+  VdpSetSpritePositionX IM_LL_SPRITE(a0), d0
   move.l  (sp)+, a1
   move.l  (sp)+, a0
 
@@ -422,7 +433,7 @@ InputManager_FindNearestInDirection:
   move.w  #0, -(sp)                                 ; Contains the current closest target index
                                                     ; -6(fp)
 
-  move.w  #32767, -(sp)                             ; Contains the last known difference measured between origin and potential destination
+  move.w  #$FFFF, -(sp)                             ; Contains the last known difference measured between origin and potential destination
                                                     ; -8(fp)
 
   move.l  a2, -(sp)                                 ; Save a2
@@ -558,7 +569,7 @@ InputManager_FindNearestInDirection_ShortestDistanceLoop:
   move.l  (sp)+, a0
 
   cmp.w   -8(fp), d0            ; Did this value come up less than the last one we looked at?
-  bge.s   InputManager_FindNearestInDirection_ShortestDistanceLoop_Continue
+  bhs.s   InputManager_FindNearestInDirection_ShortestDistanceLoop_Continue
 
   move.w  (a1), -6(fp)          ; If so, move current index position to last lowest position
   move.w  d0, -8(fp)            ; And write that distance to last_known_distance -8(fp)

@@ -35,8 +35,11 @@ LoadTitlescreen:
   move.l  (sp), a0
   InputManagerRegister a0, #$C3, #$B3, #$43, #$0B, #SelectedSettings
 
-  lea BgmDoomsday, a0
-  jsr Echo_PlayBGM
+  move.l  (sp), a0
+  InputManagerRegister a0, #19, #35, #96, #24, #SelectedSettings
+
+  ;lea BgmDoomsday, a0
+  ;jsr Echo_PlayBGM
 
 TitlescreenMain:
   InputManagerUpdate (sp)
@@ -45,7 +48,7 @@ TitlescreenMain:
 Selected1PGame:
   lea SfxBeep, a0
   jsr Echo_PlaySFX
-  TimerHiResWaitTicks #16384    ; debounce
+  TimerHiResWaitTicks #8192    ; debounce
   rts
 
 Selected2PGame:
