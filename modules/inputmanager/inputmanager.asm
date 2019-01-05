@@ -19,7 +19,9 @@ H_INPUT_MANAGER = 1
   endm
 
   macro DeleteInputManager
+    move.l  \1, -(sp)
     jsr InputManager_Destroy
+    PopStack 4
   endm
 
   macro InputManagerUpdate
@@ -104,11 +106,15 @@ InputManager_Create:
   move.l  a0, d0               ; d0 returns the address of the inputmanager
   rts
 
-; aa aa aa aa - Address of the input manager
 InputManager_Destroy:
-  move.l  (sp)+, a0
+  VdpRemoveSprite (IM_UL_SPRITE + 4)(sp)        ; + 4 adjusts for return address
+  VdpRemoveSprite (IM_UR_SPRITE + 4)(sp)
+  VdpRemoveSprite (IM_LR_SPRITE + 4)(sp)
+  VdpRemoveSprite (IM_LL_SPRITE + 4)(sp)
+
+  move.l  (sp)+, a0                             ; Save return address
   Deallocate #( ( IM_TARGETS * IM_TARGET_SIZE ) + IM_MEMBERS_SIZE )
-  move.l  a0, -(sp)
+  move.l  a0, -(sp)                             ; Restore return address
   rts
 
 ; a0 shall be address of inputmanager

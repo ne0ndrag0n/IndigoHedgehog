@@ -29,6 +29,12 @@ SPRITE_HFLIP=$0800
     PopStack 8
   endm
 
+  macro VdpRemoveSprite
+    move.w  \1, -(sp)
+    jsr RemoveSprite
+    PopStack 2
+  endm
+
   macro SpriteIndexToVram
     ;(VDP_SPRITES + ( 8 * index ))
     move.w  \1, d1            ; 8 * index
@@ -395,13 +401,38 @@ RemoveSprite:
   move.w  4(fp), -(sp)       ; Get link to sprite
   jsr FindLinkToSprite
   PopStack 2
+  move.w  d0, -(sp)          ; -6(fp) = Index of the item pointing to 00 ii
 
   cmpi.w  #-1, d0            ; Break if nothing found
   beq.s   RemoveSprite_Return
 
-  ; TODO: get d0 item and set its link attribute while preserving its size
+  SpriteIndexToVram d0       ; Read link + size data for item pointing to 00 ii
+  addi.w  #2, d1
+  move.w  d0, -(sp)
+  jsr ReadVramWord
+  PopStack 2
+
+  andi.w  #$FF80, d0         ; Keep everything but the link value
+  or.w    -4(fp), d0         ; OR the link data of the value we're removing
+
+  SpriteIndexToVram -6(fp)   ; Write vram word to item linking to 00 ii
+  addi.w  #2, d1
+  move.w  d0, -(sp)
+  move.w  d1, -(sp)
+  jsr WriteVramWord
+  PopStack 4
+
+  move.w  #0, -(sp)          ; Zero out 00 ii
+  move.w  -2(fp), -(sp)
+  jsr WriteVramWord
+  PopStack 4
+
+  move.w  #0, (VDP_DATA)     ; static_vdp sets an autoincrement of one word
+  move.w  #0, (VDP_DATA)     ; Zero out the rest of the words
+  move.w  #0, (VDP_DATA)
 
 RemoveSprite_Return:
+  PopStack 6                 ; Pop local variables
   RestoreFramePointer
   rts
 

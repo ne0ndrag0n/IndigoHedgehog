@@ -24,6 +24,8 @@ LoadTitlescreen:
   VdpDrawText #$1917, #String_Settings
 
   NewInputManager #TS_BUTTON_LOCATION
+  ;DeleteInputManager d0  ; TEST only
+
   move.l  d0, -(sp)
 
   move.l  (sp), a0
@@ -61,7 +63,7 @@ SelectedSettings:
   rts
 
 ExitTitlescreen:
-  DeleteInputManager
+  DeleteInputManager  (sp)
   bra.s ExitTitlescreen
 
   endif
