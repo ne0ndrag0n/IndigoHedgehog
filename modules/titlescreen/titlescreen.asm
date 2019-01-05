@@ -61,7 +61,7 @@ SelectedSettings:
   rts
 
 ExitTitlescreen:
-  PopStack 4
+  DeleteInputManager
   bra.s ExitTitlescreen
 
   endif

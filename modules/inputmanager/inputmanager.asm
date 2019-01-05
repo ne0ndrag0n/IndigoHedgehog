@@ -104,7 +104,7 @@ InputManager_Create:
   move.l  a0, d0               ; d0 returns the address of the inputmanager
   rts
 
-; sp shall be address of the inputmanager
+; aa aa aa aa - Address of the input manager
 InputManager_Destroy:
   move.l  (sp)+, a0
   Deallocate #( ( IM_TARGETS * IM_TARGET_SIZE ) + IM_MEMBERS_SIZE )
