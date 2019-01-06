@@ -348,7 +348,7 @@ SetSpriteTileAttrib:
   PopStack 4
   rts
 
-; -2(fp) - Current index
+; -6(fp) - Current index
 ; 4(fp) - 00 ii - Sprite Id with desired link target
 ; Returns - Index of sprite linking to given id, -1 if not found
 FindLinkToSprite:
@@ -357,7 +357,7 @@ FindLinkToSprite:
   move.w  #0, -(sp)           ; Allocate current index
 
 FindLinkToSprite_Loop:
-  SpriteIndexToVram -2(fp)    ; Get address of attribute w/link
+  SpriteIndexToVram -6(fp)    ; Get address of attribute w/link
   addi.w  #2, d1
 
   move.w  d1, -(sp)           ; read vram word
@@ -366,20 +366,23 @@ FindLinkToSprite_Loop:
 
   andi.w  #$007F, d0          ; Keep only the link attribute
 
-  tst.w   d0                  ; If link attribute is zero, we're at the end of the road
-  beq.s   FindLinkToSprite_NoneFound
-
   cmp.w   4(fp), d0           ; is vramWord == sprite id?
   beq.s   FindLinkToSprite_Found
 
-FindLinkToSprite_LoopNext:
-  move.w  d0, -2(fp)          ; Jump to next link attribute
+  tst.w   d0                  ; If link attribute is zero, we're at the end of the road
+  beq.s   FindLinkToSprite_NoneFound
+
+  move.w  d0, -6(fp)          ; Jump to next link attribute
   bra.s   FindLinkToSprite_Loop
 
 FindLinkToSprite_NoneFound:
   move.w  #-1, d0             ; -1 = nothing found
+  bra.s   FindLinkToSprite_End
 
 FindLinkToSprite_Found:
+  move.w  -6(fp), d0          ; This was the found result
+
+FindLinkToSprite_End:
   PopStack 2                  ; Pop local value
   RestoreFramePointer
   rts
@@ -389,19 +392,19 @@ RemoveSprite:
   SetupFramePointer
 
   SpriteIndexToVram 4(fp)    ; Go get the link attribute of the current item
-  move.w  d1, -(sp)          ; -2(fp) = Computed VRAM address of the current item, save it
+  move.w  d1, -(sp)          ; -6(fp) = Computed VRAM address of the current item, save it
   addi.w  #2, d1
   move.w  d1, -(sp)
   jsr ReadVramWord
   PopStack 2
 
   andi.w  #$007F, d0         ; Keep only the link attribute
-  move.w  d0, -(sp)          ; -4(fp) = Index to be written to item pointing to 00 ii
+  move.w  d0, -(sp)          ; -8(fp) = Index to be written to item pointing to 00 ii
 
   move.w  4(fp), -(sp)       ; Get link to sprite
   jsr FindLinkToSprite
   PopStack 2
-  move.w  d0, -(sp)          ; -6(fp) = Index of the item pointing to 00 ii
+  move.w  d0, -(sp)          ; -10(fp) = Index of the item pointing to 00 ii
 
   cmpi.w  #-1, d0            ; Break if nothing found
   beq.s   RemoveSprite_Return
@@ -413,9 +416,9 @@ RemoveSprite:
   PopStack 2
 
   andi.w  #$FF80, d0         ; Keep everything but the link value
-  or.w    -4(fp), d0         ; OR the link data of the value we're removing
+  or.w    -8(fp), d0         ; OR the link data of the value we're removing
 
-  SpriteIndexToVram -6(fp)   ; Write vram word to item linking to 00 ii
+  SpriteIndexToVram -10(fp)   ; Write vram word to item linking to 00 ii
   addi.w  #2, d1
   move.w  d0, -(sp)
   move.w  d1, -(sp)
@@ -423,7 +426,7 @@ RemoveSprite:
   PopStack 4
 
   move.w  #0, -(sp)          ; Zero out 00 ii
-  move.w  -2(fp), -(sp)
+  move.w  -6(fp), -(sp)
   jsr WriteVramWord
   PopStack 4
 

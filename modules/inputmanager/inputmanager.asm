@@ -19,9 +19,9 @@ H_INPUT_MANAGER = 1
   endm
 
   macro DeleteInputManager
-    move.l  \1, -(sp)
+    ; This shouldn't require a pointer; it should be right under
+    ; the return address, because a deallocation means moving sp down
     jsr InputManager_Destroy
-    PopStack 4
   endm
 
   macro InputManagerUpdate
