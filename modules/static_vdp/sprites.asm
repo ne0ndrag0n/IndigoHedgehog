@@ -76,11 +76,13 @@ NewSprite_Allocate:
   addi.w  #VDP_SPRITES, d0    ; + VDP_SPRITES
 
   move.l  d1, -(sp)
+
   move.w  #0, -(sp)           ; Vram write
   move.w  d0, -(sp)           ; VDP destination
   move.w  #0, -(sp)
   jsr ComputeVdpDestinationAddress
   PopStack 6
+
   move.l  (sp)+, d1
 
   move.l  d0, (VDP_CONTROL)   ; Set VDP to write to this address
@@ -105,15 +107,21 @@ NewSprite_Allocate:
   lsr.l   #7, d2              ; Original end of list index is at upper word so >> 16
   lsr.l   #7, d2
   lsr.l   #2, d2
+
+  cmpi.w  #-1, d2             ; If we don't have to write to the old value, don't
+  beq.s   NewSprite_Return
+
   mulu.w  #8, d2              ; index * 8
   addi.w  #VDP_SPRITES, d2    ; + VDP_SPRITES
   addi.w  #2, d2              ; + 2, to get at the link attribute
 
   move.l  d2, -(sp)
   move.l  d1, -(sp)
+
   move.w  d2, -(sp)           ; Read existing vram word at previous end of list
   jsr ReadVramWord
   PopStack 2
+
   move.l  (sp)+, d1
   move.l  (sp)+, d2
 
@@ -128,105 +136,65 @@ NewSprite_Allocate:
   PopStack 4
 
   move.l  (sp)+, d1           ; Restore d1
+
+NewSprite_Return:
   move.w  d1, d0              ; Return the index of the item we created
 
   move.l  (sp)+, d2           ; Slip d2 back
   rts
 
 ; Returns: The nearest open "slot" in the sprite attribute table. -1 if we're out of sprites.
-; Longword - High word contains the index of the last zero item. Low word contains the next item ready to use.
+; Longword - High word contains the index of the last zero item (-1 if none needs to be set). Low word contains the next item ready to use.
 FindNearestOpenSprite:
-  move.w  #VDP_SPRITES, -(sp)   ; First thing we want to do is check for the default position
-  jsr ReadVramWord              ; That's all four words in the first entry being 0
-  PopStack 2
+  SetupFramePointer
 
-  tst.w   d0
-  bne.s   FindNearestOpenSprite_Continue
+  ; Local variables
+  move.w  #0, -(sp)                ; -6(fp) = current index
+  move.w  #-1, -(sp)               ; -8(fp) = Next item ready to use
+  move.w  #-1, -(sp)               ; -10(fp) = Index of the last item with a zero link
 
-  move.w  #VDP_SPRITES + 2, -(sp)
+FindNearestOpenSprite_Loop:
+  SpriteIndexToVram -6(fp)         ; Read the tile data of the current sprite
+  addi.w  #4, d1
+  move.w  d1, -(sp)
   jsr ReadVramWord
   PopStack 2
 
-  tst.w   d0
-  bne.s   FindNearestOpenSprite_Continue
+  andi.w  #$07FF, d0              ; Only keep the tile data
+  tst.w   d0                      ; Zero signifies free sprite
+  beq.s   FindNearestOpenSprite_Found
 
-  move.w  #VDP_SPRITES + 4, -(sp)
+  SpriteIndexToVram -6(fp)        ; Read the link data of item that wasn't free
+  addi.w  #2, d1
+  move.w  d1, -(sp)
   jsr ReadVramWord
   PopStack 2
 
-  tst.w  d0
-  bne.s  FindNearestOpenSprite_Continue
+  andi.w  #$007F, d0              ; This will be the next item read
+  tst.w   d0                      ; Break infinite loop if we're going back to 0
+  beq.s   FindNearestOpenSprite_NotFound
 
-  move.w  #VDP_SPRITES + 6, -(sp)
-  jsr ReadVramWord
-  PopStack 2
+  move.w  d0, -6(fp)              ; Save link as next index
+  bra.s   FindNearestOpenSprite_Loop
 
-  tst.w   d0
-  bne.s   FindNearestOpenSprite_Continue
+FindNearestOpenSprite_NotFound:
+  move.w  -6(fp), -10(fp)         ; Save previous item
 
-  move.l  #0, d0
-  rts
+  addi.w  #1, -6(fp)              ; Increment current position
+  cmpi.w  #80, -6(fp)             ; Out of sprites if -6(fp) is 80 or higher
+  blo.s   FindNearestOpenSprite_Found
 
-FindNearestOpenSprite_Continue:
-  move.l  d2, -(sp)           ; Save d2 so we can use it
+  move.w  #-1, -6(fp)             ; No item available
 
-  move.w  #1, d1              ; Our search begins by checking to see if sprite index 1 is unused
-  move.w  #0, d2              ; Current index into the sprite table
+FindNearestOpenSprite_Found:
+  move.w  -6(fp), -8(fp)          ; Move current index to result index
+                                  ; The previous index was saved in the previous iteration
 
-FindNearestOpenSprite_TryAgain:
-  ; *( VDP_SPRITES + ( 8 * index ) + 2 ) & $007F = link value for an item in the sprite attribute table
-  move.w  d2, d0              ; 8 * index
-  mulu.w  #8, d0
-  addi.w  #VDP_SPRITES, d0    ; + VDP_SPRITES
-  addi.w  #2, d0              ; + 2
+FindNearestOpenSprite_Return:
+  move.l  -10(fp), d0              ; Prepare to return results
 
-  move.w  d1, -(sp)           ; Save d1 as ReadVramWord may corrupt it
-
-  move.w  d0, -(sp)           ; d0 turns from pointer to value
-  jsr ReadVramWord
-  PopStack 2
-
-  move.w  (sp)+, d1           ; Restore d1
-
-  andi.w  #$007F, d0          ; Only the bottom 7 bits (the index)
-
-  ; If we find the item here, it can't be used. Increment d1, reset d2 to zero, and do all this shit over again.
-  ;   If d1 equals 128 there's no room to add a sprite!
-  ; Else if we didn't find the item here, go to the next index and check that.
-  ;   If the next index is zero, this is the end of the list. The item was never found, so it's safe to use - return d1.
-
-  cmp.w   d0, d1              ; Did we find the target index?
-  bne.s   FindNearestOpenSprite_ItemNotFound
-
-  addi.w  #1, d1
-
-  cmpi.w  #128, d1            ; There is no sprite index 128. If you got here, you ran out of sprites.
-  bne.s   FindNearestOpenSprite_Reset
-
-  move.w  #-1, d0             ; -1 means you're flat out of sprites
-  bra.s   FindNearestOpenSprite_End
-
-FindNearestOpenSprite_Reset:
-  move.w  #0, d2
-  bra.s   FindNearestOpenSprite_TryAgain
-
-FindNearestOpenSprite_ItemNotFound:
-  tst.w   d0                  ; Was this the last item in the list?
-  bne.s   FindNearestOpenSprite_JumpToNext
-
-  move.w  d2, d0              ; d1 survived without being found in the linked list of sprites
-  lsl.l   #7, d0              ; Return the current d2 index in the upper word - we'll need it to reassign the link
-  lsl.l   #7, d0
-  lsl.l   #2, d0
-  or.w    d1, d0              ; Return d1 in the lower word
-  bra.s   FindNearestOpenSprite_End
-
-FindNearestOpenSprite_JumpToNext:
-  move.w  d0, d2              ; Jump on over to the next item in the list
-  bra.s   FindNearestOpenSprite_TryAgain
-
-FindNearestOpenSprite_End:
-  move.l  (sp)+, d2           ; Restore whatever d2 was
+  PopStack 6
+  RestoreFramePointer
   rts
 
 ; 00 ii - Sprite ID
@@ -348,94 +316,35 @@ SetSpriteTileAttrib:
   PopStack 4
   rts
 
-; -6(fp) - Current index
-; 4(fp) - 00 ii - Sprite Id with desired link target
-; Returns - Index of sprite linking to given id, -1 if not found
-FindLinkToSprite:
+; 4(fp) - 00 ii - Sprite id
+RemoveSprite:
   SetupFramePointer
 
-  move.w  #0, -(sp)           ; Allocate current index
+  SpriteIndexToVram 4(fp)
+  move.w  d1, -(sp)           ; -6(fp) = Base address of target
 
-FindLinkToSprite_Loop:
-  SpriteIndexToVram -6(fp)    ; Get address of attribute w/link
-  addi.w  #2, d1
-
-  move.w  d1, -(sp)           ; read vram word
+  addi.w  #2, d1              ; Read the link + hv size
+  move.w  d1, -(sp)
   jsr ReadVramWord
   PopStack 2
 
   andi.w  #$007F, d0          ; Keep only the link attribute
 
-  cmp.w   4(fp), d0           ; is vramWord == sprite id?
-  beq.s   FindLinkToSprite_Found
-
-  tst.w   d0                  ; If link attribute is zero, we're at the end of the road
-  beq.s   FindLinkToSprite_NoneFound
-
-  move.w  d0, -6(fp)          ; Jump to next link attribute
-  bra.s   FindLinkToSprite_Loop
-
-FindLinkToSprite_NoneFound:
-  move.w  #-1, d0             ; -1 = nothing found
-  bra.s   FindLinkToSprite_End
-
-FindLinkToSprite_Found:
-  move.w  -6(fp), d0          ; This was the found result
-
-FindLinkToSprite_End:
-  PopStack 2                  ; Pop local value
-  RestoreFramePointer
-  rts
-
-; 4(fp) - 00 ii - Sprite id
-RemoveSprite:
-  SetupFramePointer
-
-  SpriteIndexToVram 4(fp)    ; Go get the link attribute of the current item
-  move.w  d1, -(sp)          ; -6(fp) = Computed VRAM address of the current item, save it
-  addi.w  #2, d1
-  move.w  d1, -(sp)
-  jsr ReadVramWord
-  PopStack 2
-
-  andi.w  #$007F, d0         ; Keep only the link attribute
-  move.w  d0, -(sp)          ; -8(fp) = Index to be written to item pointing to 00 ii
-
-  move.w  4(fp), -(sp)       ; Get link to sprite
-  jsr FindLinkToSprite
-  PopStack 2
-  move.w  d0, -(sp)          ; -10(fp) = Index of the item pointing to 00 ii
-
-  cmpi.w  #-1, d0            ; Break if nothing found
-  beq.s   RemoveSprite_Return
-
-  SpriteIndexToVram d0       ; Read link + size data for item pointing to 00 ii
-  addi.w  #2, d1
-  move.w  d0, -(sp)
-  jsr ReadVramWord
-  PopStack 2
-
-  andi.w  #$FF80, d0         ; Keep everything but the link value
-  or.w    -8(fp), d0         ; OR the link data of the value we're removing
-
-  SpriteIndexToVram -10(fp)   ; Write vram word to item linking to 00 ii
+  move.w  -6(fp), d1          ; Write the value back
   addi.w  #2, d1
   move.w  d0, -(sp)
   move.w  d1, -(sp)
   jsr WriteVramWord
   PopStack 4
 
-  move.w  #0, -(sp)          ; Zero out 00 ii
-  move.w  -6(fp), -(sp)
+  move.w  -6(fp), d1          ; Zero out the sprite attr
+  addi.w  #4, d1
+  move.w  #0, -(sp)
+  move.w  d1, -(sp)
   jsr WriteVramWord
   PopStack 4
 
-  move.w  #0, (VDP_DATA)     ; static_vdp sets an autoincrement of one word
-  move.w  #0, (VDP_DATA)     ; Zero out the rest of the words
-  move.w  #0, (VDP_DATA)
-
-RemoveSprite_Return:
-  PopStack 6                 ; Pop local variables
+  PopStack 2
   RestoreFramePointer
   rts
 

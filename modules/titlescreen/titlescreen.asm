@@ -24,7 +24,6 @@ LoadTitlescreen:
   VdpDrawText #$1917, #String_Settings
 
   NewInputManager #TS_BUTTON_LOCATION
-  ;DeleteInputManager  ; TEST only
 
   move.l  d0, -(sp)
 
