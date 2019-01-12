@@ -3,6 +3,9 @@ H_TITLESCREEN = 1
   include 'modules/inputmanager/mod.asm'
 
 LoadTitlescreen:
+  VdpErasePlane #VDP_PLANE_A
+  VdpErasePlane #VDP_PLANE_B
+
   VdpLoadPaletteDma #VDP_PAL_0, #VGAPalette
   VdpLoadPaletteDma #VDP_PAL_1, #Bread
   VdpLoadPaletteDma #VDP_PAL_2, #SpacePal
@@ -24,7 +27,6 @@ LoadTitlescreen:
   VdpDrawText #$1917, #String_Settings
 
   NewInputManager #TS_BUTTON_LOCATION
-
   move.l  d0, -(sp)
 
   move.l  (sp), a0
@@ -49,8 +51,10 @@ TitlescreenMain:
 Selected1PGame:
   lea SfxBeep, a0
   jsr Echo_PlaySFX
-  TimerHiResWaitTicks #8192    ; debounce
-  rts
+
+  move.l 6(sp), sp
+  DeleteInputManager
+  jmp MainGameBoardSetup
 
 Selected2PGame:
   rts
@@ -60,9 +64,5 @@ SelectedNetplay:
 
 SelectedSettings:
   rts
-
-ExitTitlescreen:
-  DeleteInputManager
-  bra.s ExitTitlescreen
 
   endif

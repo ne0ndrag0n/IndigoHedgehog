@@ -688,9 +688,10 @@ InputManager_UpdateState_ButtonPressed:
   MoveTargetPointer IM_ORIGIN(a0), a1       ; Get pointer to the item in the target array
   move.l  TARGET_CALLBACK(a1), a1
 
+  move.l   a0, -(sp)                        ; Push pointer to InputManager
   move.w   d0, -(sp)                        ; Push button states
   jsr      (a1)                             ; Call the callback!
-  PopStack 2
+  PopStack 6
 
 InputManager_UpdateState_End:
   rts

@@ -7,3 +7,4 @@
  include 'modules/inputmanager/mod.asm'
  include 'modules/math/mod.asm'
  include 'modules/timer/mod.asm'
+ include 'modules/board/mod.asm'

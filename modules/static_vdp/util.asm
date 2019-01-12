@@ -2,6 +2,26 @@
 H_STATIC_VDP_UTIL = 1
  include 'modules/helpers/stack.asm'
 
+ macro VdpComputeDestinationAddress
+  move.w  \2, -(sp)
+  move.l  \1, -(sp)
+  jsr ComputeVdpDestinationAddress
+  PopStack 6
+ endm
+
+ macro VdpWriteDmaSourceAddress
+  move.l \1, -(sp)
+  jsr WriteDmaSourceAddress
+  PopStack 4
+ endm
+
+VDP_DEST_VRAM_WRITE=$00
+VDP_DEST_VRAM_READ=$01
+VDP_DEST_CRAM_WRITE=$02
+VDP_DEST_DMA=$80
+
+VDP_DMA_VRAM_FILL=$80
+
 ; xx yy - Tile index
 ; pp pp - Plane nametable VRAM address
 ; 00 ss - Status, in bits: 0000 0000 for vram write, 0000 0001 for vram read, 1000 0000 for DMA
