@@ -8,5 +8,6 @@ H_DATA_PATTERNS = 1
   include 'data/patterns/ui.asm'
   include 'data/patterns/swirl1.asm'
   include 'data/patterns/board_bg_1.asm'
+  include 'data/patterns/board_bg_2.asm'
 
   endif

@@ -10,3 +10,11 @@ String_Online:
   dc.b  'Network Play',$00
 String_Settings:
   dc.b  'Settings',$00
+String_Super:
+  dc.b  'SUPER',0
+String_Swirl:
+  dc.b  'SWIRL',0
+String_Score:
+  dc.b  'Score:',0
+String_ComboBonus:
+  dc.b  'Combo:',0

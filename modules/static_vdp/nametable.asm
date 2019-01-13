@@ -19,6 +19,22 @@ H_STATIC_VDP_NAMETABLE = 1
     PopStack 2
   endm
 
+  macro VdpBlitFill
+    move.w  \5, -(sp)
+    move.w  \4, -(sp)
+    move.w  \3, -(sp)
+    move.w  \2, -(sp)
+    move.w  \1, -(sp)
+    jsr BlitFill
+    PopStack 10
+  endm
+
+VDP_TILE_ATTR_PAL0 = $00
+VDP_TILE_ATTR_PAL1 = $20
+VDP_TILE_ATTR_PAL2 = $40
+VDP_TILE_ATTR_PAL3 = $60
+VDP_TILE_ATTR_PRIORITY = $80
+
 ; TODO: Callee-saved d2 register for gcc compatibility
 ; xx yy - Location on plane
 ; ww hh - Width and height of pattern
@@ -209,7 +225,6 @@ BlitSingleTile:
 ; 00 aa - Tile attribute (priority (1), palette (2), vflip (1), hflip (1))
 ; dw dh - Repeat dimensions
 BlitRepeatingPattern:
-  ; TODO: All untested
   SetupFramePointer
 
   ; All the weirdness here is because stack shit needs to be word-aligned
